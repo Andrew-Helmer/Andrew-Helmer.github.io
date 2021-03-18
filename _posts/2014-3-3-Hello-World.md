@@ -1,7 +1,13 @@
 ---
 layout: post
 title: You're up and running!
+katex: true
 ---
+
+inline: $$f(x) = \int_{-\infty}^\infty \hat f(\xi)\,e^{2 \pi i \xi x} \,d\xi$$
+display mode (centered):
+
+$$f(x) = \int_{-\infty}^\infty \hat f(\xi)\,e^{2 \pi i \xi x} \,d\xi$$
 
 Next you can update your site name, avatar and other options using the _config.yml file in the root of your repository (shown below).
 
