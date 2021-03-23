@@ -69,7 +69,6 @@ kramdown:
     css_class: 'highlight'
   math_engine: katex
   math_engine_opts:
-    katex_js: '_assets/katex.min.js'
     throwOnError: true
 
 # Set the Sass partials directory, as we're using @imports
