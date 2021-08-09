@@ -218,3 +218,8 @@ vector<uint32_t> get_base2_shuffled_indices(int length) {
 {% endhighlight %}
 
 The obvious downside here is we need to allocate that second array. But I think it's still sort of a cool little trick, and I haven't tested performance yet, but I think it should run quite fast even if you're doing the whole thing in a different base. It may not be immediately obvious how to generalize this to a higher base, but we go over that to some degree in Section 4.6 of the paper. Hopefully I'll have some code up online for arbitrary bases in the not too distant future.
+
+# References
+* Art Owen. *“Randomly permuted (t,m,s)-nets and (t,s)-sequences”*. Monte Carlo and Quasi-Monte Carlo Methods in Scientific Computing. Ed. by Niederreiter, H. and Shiue, P. Springer, 1995, 299–317.
+* Henri Faure and Shu Tezuka. *“Another random scrambling of digital (t,s)-sequences”*. Monte Carlo and Quasi-Monte Carlo Methods 2000. Ed. by FANG, K.-T., Niederreiter, H., and Hickernell, F. Springer, 2002, 242–256.
+* Andrew Helmer, Per Christensen, and Andrew Kensler. *“Stochastic Generation of (t,s) Sample Sequences”*. Eurographics Symposium on Rendering - DL-only Track. Ed. by Bousseau, A. and McGuire, Morgan, 2021.
