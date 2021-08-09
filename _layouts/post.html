@@ -8,6 +8,12 @@ layout: default
   	<div class="subtitle">{{ page.subtitle }}</div>
   </h1>
 
+  {%- if page.image -%}
+  <div class="featured-image-post">
+      <img src="{{ page.image }}" alt="">
+  </div>
+  {%- endif -%}
+
   <div class="entry">
     {{ content }}
   </div>

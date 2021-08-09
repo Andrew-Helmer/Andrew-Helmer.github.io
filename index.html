@@ -8,8 +8,15 @@ katex: true
     <article class="post">
 
       <h1 class="title"><a href="{{ site.baseurl }}{{ post.url }}">{{ post.title }}</a>
+        {%- if post.subtitle -%}
       	<div class="subtitle">{{ post.subtitle }}</div>
+        {%- endif -%}
   	  </h1>
+      {%- if post.image -%}
+      <div class="featured-image-post">
+          <img src="{{ post.image }}" alt="">
+      </div>
+      {%- endif -%}
       <div class="entry">
         {{ post.excerpt }}
       </div>

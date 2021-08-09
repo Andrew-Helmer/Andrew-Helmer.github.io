@@ -280,6 +280,11 @@ nav {
   }
 }
 
+.post > div.featured-image-post {
+  display: flex;
+  justify-content: center;
+}
+
 .wrapper-footer {
   margin-top: 50px;
   border-top: 1px solid #ddd;
