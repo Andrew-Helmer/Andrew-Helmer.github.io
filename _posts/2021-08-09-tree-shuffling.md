@@ -222,4 +222,5 @@ The obvious downside here is we need to allocate that second array. But I think 
 # References
 * Art Owen. *“Randomly permuted (t,m,s)-nets and (t,s)-sequences”*. Monte Carlo and Quasi-Monte Carlo Methods in Scientific Computing. Ed. by Niederreiter, H. and Shiue, P. Springer, 1995, 299–317.
 * Henri Faure and Shu Tezuka. *“Another random scrambling of digital (t,s)-sequences”*. Monte Carlo and Quasi-Monte Carlo Methods 2000. Ed. by FANG, K.-T., Niederreiter, H., and Hickernell, F. Springer, 2002, 242–256.
+* Samuli Laine and Tero Karras. *“Stratified sampling for stochastic transparency”*. Computer Graphics Forum (Proc. Eurographics Symposium on Rendering) 30.4 (2011)
 * Andrew Helmer, Per Christensen, and Andrew Kensler. *“Stochastic Generation of (t,s) Sample Sequences”*. Eurographics Symposium on Rendering - DL-only Track. Ed. by Bousseau, A. and McGuire, Morgan, 2021.
