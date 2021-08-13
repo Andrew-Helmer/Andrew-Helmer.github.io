@@ -38,7 +38,7 @@ Typically Owen-scrambling is done on points that are placed within the unit inte
 
 This recursive algorithm pretty clearly takes *O(n\*log(n))* time, where *n* is the length of the array. Another common way to do this is with a "permutation tree", which is also *O(n\*log(n))*.
 
-It might be surprising, but it's actually possible to do this in *O(n)* time, assuming that your integers have at least *log(n)* digits in your chose base, and that you can generate a good random number for an entire integer.
+It might be surprising, but it's actually possible to do this in *O(n)* time, assuming you can generate a good random integer in *O(1)* time.
 
 In fact, there are at least three different ways to do this! Maybe it's overkill, but I'm going to discuss all three in this post. 
 
@@ -106,7 +106,9 @@ vector<uint32_t> get_base2_shuffled_indices(int length) {
 }
 {% endhighlight %}
 
-This hashing is a great technique that will probably be suitable for a lot of applications. However there's one area that it's not great for, which is bases other than two.
+This hashing is a great technique that will probably be suitable for a lot of applications. I should be a little honest, it's not really *O(1)*, because of the reverse_bits operation, which is actually *O(log log n)*. If you moved up to 64-bit integers, for example, you would have to add one line of code to that function (in addition to modifying the masks and everything.
+
+Anyway there's one area that the hashing isn't great for, which is bases other than two.
 
 # Method 2: Subtree Permutations
 
