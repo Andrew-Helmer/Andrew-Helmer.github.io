@@ -1,0 +1,159 @@
+{% if page.toc != false %}
+<aside class="post-toc" id="post-toc">
+  <a class="toc-title" href="#post-start">Contents</a>
+  <nav id="TableOfContents"></nav>
+</aside>
+
+<script>
+(function() {
+  function initToc() {
+    var entry = document.querySelector('.post .entry');
+    var tocContainer = document.getElementById('post-toc');
+    var tocNav = document.getElementById('TableOfContents');
+    if (!entry || !tocContainer || !tocNav) return;
+
+    var headings = entry.querySelectorAll('h1, h2, h3, h4, h5, h6');
+    if (headings.length < 2) {
+      tocContainer.style.display = 'none';
+      return;
+    }
+
+    var minLevel = 6;
+    for (var idx = 0; idx < headings.length; idx++) {
+      var l = parseInt(headings[idx].tagName.charAt(1), 10);
+      if (l < minLevel) minLevel = l;
+    }
+
+    var rootUl = document.createElement('ul');
+    var stack = [{ level: minLevel - 1, ul: rootUl, li: null }];
+
+    for (var i = 0; i < headings.length; i++) {
+      var h = headings[i];
+      if (!h.id) {
+        h.id = h.textContent.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      }
+
+      var level = parseInt(h.tagName.charAt(1), 10);
+      var li = document.createElement('li');
+      var a = document.createElement('a');
+      a.href = '#' + h.id;
+      a.textContent = h.textContent;
+      li.appendChild(a);
+
+      while (stack.length > 1 && stack[stack.length - 1].level >= level) {
+        stack.pop();
+      }
+
+      var parent = stack[stack.length - 1];
+      if (level > parent.level) {
+        var targetUl;
+        if (parent.li) {
+          targetUl = parent.li.querySelector(':scope > ul');
+          if (!targetUl) {
+            targetUl = document.createElement('ul');
+            parent.li.appendChild(targetUl);
+          }
+        } else {
+          targetUl = parent.ul;
+        }
+        targetUl.appendChild(li);
+        stack.push({ level: level, ul: targetUl, li: li });
+      } else {
+        parent.ul.appendChild(li);
+        stack.push({ level: level, ul: parent.ul, li: li });
+      }
+    }
+
+    tocNav.innerHTML = '';
+    tocNav.appendChild(rootUl);
+
+    // Smooth click handler for TOC links and title
+    tocContainer.addEventListener('click', function(e) {
+      var target = e.target.closest('a');
+      if (!target) return;
+      var href = target.getAttribute('href');
+      if (!href || href.charAt(0) !== '#') return;
+      var targetId = href.slice(1);
+      var heading = document.getElementById(targetId);
+      if (heading) {
+        e.preventDefault();
+        var top = heading.getBoundingClientRect().top + window.scrollY - 30;
+        window.scrollTo({ top: top, behavior: 'smooth' });
+        if (history.pushState) {
+          history.pushState(null, null, '#' + targetId);
+        }
+      }
+    });
+
+    // Scrollspy & Auto-Unnesting
+    function onScroll() {
+      var scrollPos = window.scrollY + 100;
+      var currentId = '';
+
+      for (var i = 0; i < headings.length; i++) {
+        var h = headings[i];
+        if (h.getBoundingClientRect().top + window.scrollY <= scrollPos) {
+          currentId = h.id;
+        }
+      }
+
+      var isSidebar = window.innerWidth >= 960;
+      var allLinks = tocNav.querySelectorAll('a');
+      var allNestedUls = tocNav.querySelectorAll('li > ul');
+
+      for (var j = 0; j < allLinks.length; j++) {
+        allLinks[j].classList.remove('active', 'semi_active');
+      }
+      // When at the top of the post (outside any section), show the fully expanded table of contents
+      if (!currentId && headings.length > 0) {
+        for (var k = 0; k < allNestedUls.length; k++) {
+          allNestedUls[k].style.display = 'block';
+        }
+        return;
+      }
+
+      for (var k = 0; k < allNestedUls.length; k++) {
+        allNestedUls[k].style.display = isSidebar ? 'none' : 'block';
+      }
+
+      var selector = 'a[href="#' + (window.CSS && CSS.escape ? CSS.escape(currentId) : currentId) + '"]';
+      var activeLink = tocNav.querySelector(selector);
+      if (activeLink) {
+        activeLink.classList.add('active');
+
+        // Unnest / expand immediate child sub-list
+        var childUl = activeLink.parentElement.querySelector(':scope > ul');
+        if (childUl) {
+          childUl.style.display = 'block';
+        }
+
+        // Unnest / expand all parent lists and mark ancestor links semi_active
+        var curr = activeLink.parentElement;
+        while (curr && curr !== tocNav) {
+          if (curr.tagName === 'UL') {
+            curr.style.display = 'block';
+          }
+          if (curr.tagName === 'LI') {
+            var parentA = curr.querySelector(':scope > a');
+            if (parentA && parentA !== activeLink) {
+              parentA.classList.add('semi_active');
+            }
+          }
+          curr = curr.parentElement;
+        }
+      }
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+    onScroll();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initToc);
+  } else {
+    initToc();
+  }
+})();
+</script>
+{% endif %}

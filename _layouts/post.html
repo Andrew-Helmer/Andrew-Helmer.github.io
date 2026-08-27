@@ -3,7 +3,7 @@ layout: default
 ---
 
 <article class="post">
-  <h1 class="title">
+  <h1 class="title" id="post-start">
   	{{ page.title }}
   	<div class="subtitle">{{ page.subtitle }}</div>
   </h1>
@@ -14,8 +14,12 @@ layout: default
   </div>
   {%- endif -%}
 
-  <div class="entry">
-    {{ content }}
+  <div class="post-content-container">
+    <div class="entry">
+      {{ content }}
+    </div>
+
+    {% include toc.html %}
   </div>
 
   <div class="date">

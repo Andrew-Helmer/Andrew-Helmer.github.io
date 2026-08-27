@@ -1,0 +1,147 @@
+//
+// Dynamic Sidebar Table of Contents
+//
+
+.post-content-container {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 36px;
+  position: relative;
+  width: 100%;
+
+  .entry {
+    flex: 1 1 0%;
+    min-width: 0;
+  }
+}
+
+.post-toc {
+  display: block;
+  width: 250px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 25px;
+  max-height: calc(100vh - 50px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  font-size: 13.5px;
+  line-height: 1.45;
+  border-left: 2px solid $border;
+  padding: 4px 0 20px 14px;
+  box-sizing: border-box;
+  z-index: 10;
+
+  // Custom scrollbar
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: $border;
+    border-radius: 2px;
+  }
+
+  .toc-title {
+    display: block;
+    font-weight: bold;
+    font-size: 14px;
+    margin-bottom: 12px;
+    color: $heading;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-decoration: none;
+
+    &:hover {
+      color: $blue;
+    }
+  }
+
+  nav {
+    float: none;
+    margin-top: 0;
+    font-family: inherit;
+    font-size: inherit;
+
+    a {
+      margin-left: 0;
+      color: $muted;
+      text-align: left;
+      font-weight: normal;
+      letter-spacing: normal;
+      text-decoration: none;
+      display: block;
+      transition: color 0.15s ease, font-weight 0.15s ease;
+      word-break: break-word;
+
+      &:hover {
+        color: $text;
+      }
+
+      &.active {
+        color: $blue;
+        font-weight: bold;
+      }
+
+      &.semi_active {
+        color: $text;
+      }
+    }
+  }
+
+  ul {
+    list-style-type: none;
+    list-style: none;
+    margin: 0;
+    padding-left: 0;
+
+    li {
+      margin: 5px 0;
+
+      // Expand immediate child sub-list on hover
+      &:hover > ul {
+        display: block !important;
+      }
+    }
+
+    ul {
+      list-style-type: none;
+      list-style: none;
+      padding-left: 12px;
+      margin: 3px 0;
+      border-left: 1px dashed rgba(128, 128, 128, 0.3);
+    }
+  }
+}
+
+// Expand main container on post pages for comfortable side-by-side reading on desktop
+@media screen and (min-width: 1040px) {
+  .container {
+    max-width: 1120px;
+  }
+}
+
+// On mobile / narrow screens (< 960px), stack TOC as a box at the top
+@media screen and (max-width: 959px) {
+  .post-content-container {
+    flex-direction: column-reverse;
+    gap: 0;
+  }
+
+  .post-toc {
+    position: static;
+    width: 100%;
+    max-width: 100%;
+    margin-bottom: 30px;
+    border: 1px solid $border;
+    border-radius: 6px;
+    background-color: $codeBg;
+    padding: 16px 20px;
+
+    .toc-title {
+      font-size: 15px;
+      margin-bottom: 10px;
+    }
+  }
+}
+

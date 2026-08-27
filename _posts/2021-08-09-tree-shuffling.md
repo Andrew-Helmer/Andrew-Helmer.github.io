@@ -6,6 +6,8 @@ title: "Fast Owen-scrambling of Arrays"
 subtitle: "Different ways to randomly permute implicit trees in O(n) time"
 ---
 
+## The Problem
+
 Say you have an array whose length is a power of some base *b*. For most of this post we'll be using powers of two, but we'll discuss other bases as well. Imagine that there is a *b*-ary tree over the array. We want to shuffle the array in the following way: randomly shuffle the *b* sub-trees of the root. Then, recurse into each subtree, and do the same, until we get to the bottom. 
 
 Here's a simple recursive C++ function to do this for a binary tree (*b=2*):
@@ -28,13 +30,13 @@ void binary_tree_shuffle(T* arr, int length) {
 
 Typical caveat here: I haven't tested this code, it might not even compile, it's just to give an idea.
 
-## Owen-scrambling, Faure-Tezuka scrambling
+### Owen-scrambling, Faure-Tezuka scrambling
 
 This sort of recursive tree shuffling is known as "Owen-scrambling", or Owen's scrambling, because it was introduced by Art Owen in the paper "Randomly permuted (t,m,s)-nets and (t, s)-sequences" (1995). Actually I think it was introduced by Owen in 1994 in a technical report, but that's not what most papers cite. Anyway Owen also calls it "Nested uniform scrambling", which is probably a better name, but less commonly used.
 
 Typically Owen-scrambling is done on points that are placed within the unit interval \[0, 1\). When it's done on an array, it's sometimes called Faure-Tezuka scrambling, because Henri Faure and Shu Tezuka proposed this in “Another random scrambling of digital (t,s)-sequences” (2002). But this terminology is also ambiguous because Faure and Tezuka mentioned both this type of shuffling, and a different type of shuffling based on matrix multiplications, in the same paper. And usually, but not always, when academics say "Faure-Tezuka scrambling", they mean the matrix one.
 
-## Performance
+### Performance
 
 This recursive algorithm pretty clearly takes *O(n\*log(n))* time, where *n* is the length of the array. Another common way to do this is with a "permutation tree", which is also *O(n\*log(n))*.
 
@@ -42,13 +44,13 @@ It might be surprising, but it's actually possible to do this in *O(n)* time, as
 
 In fact, there are at least three different ways to do this! Maybe it's overkill, but I'm going to discuss all three in this post. 
 
-# Background
+## Background
 
 Let's back up. Who even cares about this? Why is it useful? I'm not going to go into a ton of detail on this, but Owen-scrambling in general is a really nice way to randomize points that are well-distributed. Owen-scrambling arrays can be used to Owen-scramble a fixed number of random points in the unit-interval, by putting each point into its own cell in the array. 
 
 More importantly, it's a useful method to shuffle the order of some progressive sample sequences, specifically *(t,s)*-sequences. A *(t,s)*-sequence shuffled with this method is still a *(t,s)*-sequence, but will be decorrelated from other shufflings of it. The personal background here is that I worked [on a paper](https://diglib.eg.org/handle/10.2312/sr20211287), and we discussed this kind of shuffling in Section 5.2 of the paper, but we never discussed how to do it *efficiently*. To be honest, other than the hashing technique I'll mention first, I hadn't precisely figured it out. I knew it was possible, but it was sort of a loose end.
 
-# Slight restatement: getting a shuffled index array.
+### Slight restatement: getting a shuffled index array.
 
 We're going to slightly adjust this problem to make further discussions simpler, but it's basically the same. Rather than shuffling an array in-place, all we're going to look at is generating a shuffle array of *indices*, which could then be used to shuffle some other array. Using the original shuffle, we're now defining a function <code>get_base2_shuffled_indices()</code>.
 
