@@ -10,10 +10,14 @@
   gap: 36px;
   position: relative;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
 
   .entry {
     flex: 1 1 0%;
     min-width: 0;
+    max-width: 100%;
+    overflow-wrap: break-word;
   }
 }
 
@@ -126,6 +130,15 @@
   .post-content-container {
     flex-direction: column-reverse;
     gap: 0;
+    width: 100%;
+    max-width: 100%;
+
+    .entry {
+      flex: 1 1 auto;
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+    }
   }
 
   .post-toc {
@@ -137,6 +150,7 @@
     border-radius: 6px;
     background-color: $codeBg;
     padding: 16px 20px;
+    box-sizing: border-box;
 
     .toc-title {
       font-size: 15px;

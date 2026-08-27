@@ -3,11 +3,12 @@
   background-color: $codeBg;
   padding: 7px;
   border: 1px solid $border;
-  margin: 20px 0 20px 0;
-  overflow: auto;
+  margin: 20px auto;
+  overflow-x: auto;
   font-size: 10pt;
   max-width: 700px;
-  margin: auto;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .highlight td.gutter.gl {
@@ -16,6 +17,7 @@
 
 table.rouge-table {
 	border-collapse: separate;
+  max-width: 100%;
 }
 
 code {
