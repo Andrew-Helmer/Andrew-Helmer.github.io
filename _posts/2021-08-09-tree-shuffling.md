@@ -8,7 +8,9 @@ subtitle: "Different ways to randomly permute implicit trees in O(n) time"
 
 ## The Problem
 
-Say you have an array whose length is a power of some base *b*. For most of this post we'll be using powers of two, but we'll discuss other bases as well. Imagine that there is a *b*-ary tree over the array. We want to shuffle the array in the following way: randomly shuffle the *b* sub-trees of the root. Then, recurse into each subtree, and do the same, until we get to the bottom. 
+Say you have an array whose length is a power of some base *b*. For most of this post we'll be using powers of two, but we'll discuss other bases as well. Imagine that there is a *b*-ary tree over the array. We want to shuffle the array in the following way: randomly shuffle the *b* sub-trees of the root. Then, recurse into each subtree, and do the same, until we get to the bottom.
+
+<!--more-->
 
 Here's a simple recursive C++ function to do this for a binary tree (*b=2*):
 
