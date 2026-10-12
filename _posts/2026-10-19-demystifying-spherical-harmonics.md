@@ -50,7 +50,7 @@ In graphics, performance is really important, so being able to do these things f
 
 As I'll show shortly, the first property is because the domain we are optimizing least squares over is the uniform distribution over the unit sphere, rather than any arbitrary distribution of x,y,z values.
 
-ENCODING THE LINEAR MODEL COEFFICIENTS
+## ENCODING THE LINEAR MODEL COEFFICIENTS
 
 The calculation of the coefficients is often called "encoding". In a machine learning context this would often be called regression or fitting or learning or maybe compressing or mayyybe training. When it comes to spherical harmonics, the fast \*method\* of encoding is specifically called "projection" for reasons that we'll discuss later.
 
@@ -58,7 +58,7 @@ Then evaluating the approximation function f^ I'll usually call reconstruction, 
 
 We're going to derive the fast encoding from scratch, for both the c0 term and the cx term. The cy and cz terms are basically the same as cx. The derivation involves a small amount of calculus, but if you want, you can skip the DERIVATION section, and go to ENCODING RULES.
 
-DERIVATION
+## DERIVATION
 
 We'll start with c0. We want to find the c0 that minimizes least squares errors. This is written as:
 
@@ -148,7 +148,7 @@ c\_x \= 3\*\<f(d)\*d\_x\>
 
 Now you start to get a sense for why this is called "projection", because we're projecting the function onto the x directional component.
 
-ENCODING RULES
+## ENCODING RULES
 
 Now we have our super fast and easy encoding of coefficients for our linear model:
 
@@ -161,7 +161,7 @@ And a little Python code can be written to estimate this numerically, like:
 
 For a long time I found spherical harmonics a bit scary. I don't know about you, but derived this way, I find it hard to imagine a simpler spherical approximation\! It's a single line of code to evaluate, and only a few lines of code to encode, and the derivation is not really hard. And on top of that, it's doing something that many engineers are already familiar with, just a simple linear model with least squares, plus a trick to encode the coefficients in a faster way.
 
-QUESTIONING OUR ASSUMPTIONS
+## QUESTIONING OUR ASSUMPTIONS
 
 Now that we've derived the fast encoding, let's reconsider some important assumptions we had to make. Typical applications of spherical harmonics in graphics violate at least one of these assumptions, sometimes two, often all three. Even when the assumptions are violated, spherical harmonics are still usually pretty good \*in practice\*, but sometimes the issues can be significant.
 
@@ -189,7 +189,7 @@ Finally, many people make the mistake of using standard or naive SH projection w
 
 In practice, these may or may not be significant problems in your application, but I have seen improvements to visual quality by addressing them.
 
-CONVOLUTION
+## CONVOLUTION
 
 Let's say we have an L1 spherical harmonic approximation, encoded with our 4 coefficients c0, c\_x, c\_y, c\_z. Then we have a spherical convolution g(x), which could do something like "blur" or "sharpen" the approximation. 
 
@@ -239,7 +239,7 @@ Again, all of this is under the assumption that our integrals are uniformly orie
 
 I'll add one other neat detail, which is that any "kernel transform" of a sphere (this could also include rotations, squishing, etc.) can be baked into a n x n matrix for n spherical harmonic coefficients, and transforming an encoding is just a matrix multiplication. Convolution is a special case where it’s a diagonal matrix.
 
-HIGHER DEGREE POLYNOMIALS
+## HIGHER DEGREE POLYNOMIALS
 
 Now let's say we want to use second-degree polynomials. We can add terms to our linear model to get this reconstruction function, which I'll call "Fast Reconstruction Form":
 
@@ -282,7 +282,7 @@ It may not be obvious why we've done, until we derive the reconstruction rules:
 
 Now we can see that there is a comforting similarity between the encoding and reconstruction, where we are still just "projecting" the original function onto each term of the reconstruction approximation, and multipying by a constant.
 
-BRIDGING THE GAP
+## BRIDGING THE GAP
 
 I want to highlight how this approach differs from the typical approach to spherical harmonics, and start to introduce the real mathematical definitions.
 
