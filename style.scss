@@ -297,6 +297,13 @@ footer {
   text-align: center;
 }
 
+// KaTeX places the hat in \hat{f} slightly right of the center of the letter.
+// KaTeX sets `left` inline on the accent, so !important is needed to override it.
+// The default inline value for f is -0.0833em; this shifts it further left.
+.katex .accent .accent-body {
+  left: -0.23em !important;
+}
+
 // Settled on moving the import of syntax highlighting to the bottom of the CSS
 // ... Otherwise it really bloats up the top of the CSS file and makes it difficult to find the start
 @import "highlights";
