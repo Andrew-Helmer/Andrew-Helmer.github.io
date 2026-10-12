@@ -5,6 +5,8 @@ date: 2026-10-19
 latex: true
 ---
 
+{:todo: style="color: red"}
+
 Ever since I first heard of spherical harmonics as an approximation in computer graphics, I think when I was starting my career in 2011 or 2012, I have felt that the way they are explained is too complicated. Most explanations start with fairly abstract mathematical constructs, without giving much intuition or justification. In addition to making it harder to learn, I think the typical approach to SH can also lead to misapplication. There's a lot of discussion about certain SH artifacts, but there is a class of problems with SH that are often ignored, which we'll talk about in [Questioning Our Assumptions](#questioning-our-assumptions).
 
 So I've been wanting to write this post for a while, with a different way to look at SH that I hope is more straightforward and intuitive for some people.
@@ -13,7 +15,8 @@ Let's start with the engineering problem where you might want to use a spherical
 
 We have a whole bunch of values that are oriented in different directions. In graphics, a common example of this is the incoming light (radiance) at a particular point in space. Here is a little interactive visualization where you can either see the lighting value along each surface normal (spherical projection), or as a reflection.
 
-\<interactive diagram of a simple reflective sphere\>
+TODO: interactive diagram of a simple reflective sphere
+{: todo}
 
 For this one specific point in space, we can call these values a function $$f(d_x, d_y, d_z)$$, where the $$d$$ values are the x,y,z components of our direction $$d$$ (a unit vector). Remember $$f()$$ is the \*actual\* directional values. This is expensive. Alternatively you can pre-render a high resolution version of the spherical function, possibly storing in a cubemap or octahedral map. But this requires a lot of memory for every point in space.
 
@@ -27,15 +30,18 @@ Where we will store our four coefficients: $$c_0, c_x, c_y, c_z$$. Note that $$\
 
 It might be obvious that you can think of the $$c_0$$ term as an overall intensity, and the $$c_x, c_y, c_z$$ as a directional intensity, for a particular direction.
 
-\<interactive diagram showing simple spherical approximation\>
+TODO: interactive diagram showing simple spherical approximation
+{: todo}
 
 So how do we get these four coefficients? A quick idea might be to minimize the (sum/average/integrated) square error against the original function or a high-resolution version. In other words, a good old fashioned linear regression. In this code we'll sample some random directions and regress on those.
 
-\[python code for linear regression\]
+TODO: python code for linear regression
+{: todo}
 
 This gives us a pretty simple spherical approximation.
 
-\[interactive diagram of sphere with spherical projection of original image, vs. linear model, with coefficients that can be manipulated or "reset"\]
+TODO: interactive diagram of sphere with spherical projection of original image, vs. linear model, with coefficients that can be manipulated or "reset"
+{: todo}
 
 Well, we pretty much just reinvented spherical harmonic approximations\! Yup, really. This is most likely something countless people have done without even realizing that what they did was equivalent to using SH.
 
@@ -166,6 +172,9 @@ $$
 
 And a little Python code can be written to estimate this numerically, like:
 
+TODO: python code to estimate the encoding numerically
+{: todo}
+
 For a long time I found spherical harmonics a bit scary. I don't know about you, but derived this way, I find it hard to imagine a simpler spherical approximation\! It's a single line of code to evaluate, and only a few lines of code to encode, and the derivation is not really hard. And on top of that, it's doing something that many engineers are already familiar with, just a simple linear model with least squares, plus a trick to encode the coefficients in a faster way.
 
 ## Questioning Our Assumptions
@@ -186,13 +195,15 @@ And in this case, "projection" is no longer the optimal least squares solution, 
 
 For a single point light source, we can \*perfectly\* represent the irradiance using the clamped function, with zero error. But naive SH projection is overly soft, because it's minimizing error for the wrong reconstruction function.
 
-\<interactive diagram showing naive projection vs. clamped, where the light direction can be dragged around\>
+TODO: interactive diagram showing naive projection vs. clamped, where the light direction can be dragged around
+{: todo}
 
 It's also generally the case that least squares error is rarely ideal for graphics applications. A relative error is usually better, and there are even better perceptual error metrics depending on what you know about your scene.
 
 Finally, many people make the mistake of using standard or naive SH projection when your incoming light distribution is actually a hemisphere, for example when storing directional lightmaps. This can actually lead to meaningful bias, ending up too bright even for a completely flat surface where we should be matching non-directional lightmaps.
 
-\<diagram showing bias of hemispherical lighting\>
+TODO: diagram showing bias of hemispherical lighting
+{: todo}
 
 In practice, these may or may not be significant problems in your application, but I have seen improvements to visual quality by addressing them.
 
@@ -206,7 +217,8 @@ Now we'll derive this. Let's say that a convolution takes in a spherical functio
 
 $$g(f, v) = \int_\Omega h(v \cdot d) \, f(d) \, \mathrm{d}\omega$$
 
-NOTE: need to find the right definition of a convolution that is "constant" over the sphere. Something about the weighting function?
+TODO: need to find the right definition of a convolution that is "constant" over the sphere. Something about the weighting function?
+{: todo}
 
 Now we can also express our encoding as an integral, for example
 
@@ -222,7 +234,7 @@ $$c_0(g(f)) = \int_\Omega \frac{\int_\Omega h(v \cdot d) \, f(d) \, \mathrm{d}v}
 
 And pull $$f(d)$$ out of the inner integral because it's unrelated to $$\mathrm{d}v$$
 
-$$c_0(g(f)) = \int_\Omega \left( \int_\Omega h(v \cdot d) \, \mathrm{d}v \cdot \frac{f(d)}{4\pi} \right) \mathrm{d}d$$
+$$c_0(g(f)) = \int_\Omega \left( \int_\Omega h(v \cdot d) \, \mathrm{d}v \cdot \frac{f(d)}{4\pi} \right) \mathrm{d}\omega$$
 
 Now $$\int_\Omega h(v \cdot d) \, \mathrm{d}v$$ is a constant value, we'll call it $$k$$, so we have
 
@@ -269,7 +281,8 @@ $$\hat{f}(d_x) = c_0 + c_x d_x + c_{x^2} d_x d_x$$
 
 Let's now rederive the least-squares solution for the $$c_0$$ term.
 
-\[TODO: fill in here\]
+TODO: fill in here
+{: todo}
 
 As we can see, $$c_0$$ is no longer a simple average and some of the terms seem to cross over and affect each other. I'm not going to derive everything, but if we use Fast Reconstruction Form
 
@@ -277,7 +290,8 @@ $$\hat{f}(d_x, d_y, d_z) = c_0 + c_x d_x + c_y d_y + c_z d_z + c_{xy} d_x d_y + 
 
 Then we end up with these encoding rules:
 
-\[TODO: fill in here\]
+TODO: fill in here
+{: todo}
 
 A convolution is still a matrix multiply of the coefficients, but isotropic convolutions are no longer diagonal matrices. So maybe the next form would be more accurate to call "Fast Isotropic Convolution Form", but I'm just going to call it Fast Convolution Form.
 
@@ -285,7 +299,13 @@ Option 2: Fast Convolution Form
 
 Instead, we're going to change our reconstruction function to keep all the terms independent:
 
-It may not be obvious why we've done, until we derive the reconstruction rules:
+TODO: Fast Convolution Form reconstruction function
+{: todo}
+
+It may not be obvious why we've done this, until we derive the reconstruction rules:
+
+TODO: Fast Convolution Form encoding/reconstruction rules
+{: todo}
 
 Now we can see that there is a comforting similarity between the encoding and reconstruction, where we are still just "projecting" the original function onto each term of the reconstruction approximation, and multipying by a constant.
 
@@ -295,21 +315,37 @@ I want to highlight how this approach differs from the typical approach to spher
 
 To recap here's our reconstruction math
 
+TODO: recap of our reconstruction math
+{: todo}
+
 And here's our encoding math
+
+TODO: recap of our encoding math
+{: todo}
 
 By contrast, a rote implementation of SH does
 
+TODO: rote SH reconstruction
+{: todo}
+
 With encoding as
+
+TODO: rote SH encoding
+{: todo}
 
 If you plug the encoding values into the reconstruction, the terms cancel, and you end up with the same result. 
 
 Now I want to specifically highlight these sub-terms, which we'll define like this:
 
-f\_()
+TODO: sub-term definitions, f\_()
+{: todo}
 
 Coming back to the spherical harmonics vs. SH approximations, each one of these little functions is a spherical harmonic, and this is what spherical harmonics actually are: a set of (basis) functions on a sphere. An SH approximation is the linear combination of these basis functions, with encoded coefficients.
 
 The usefulness of this basis function representation is that it's easier to generalize to higher degree polynomials.
+
+TODO: introduce the gpfault article
+{: todo}
 
 [https\://gpfault.net/posts/sph.html](https://gpfault.net/posts/sph.html)
 
@@ -318,5 +354,3 @@ After reading that other article, I also recommend Graham Hazel's "Alternative D
 [https\://grahamhazel.com/blog/2017/12/18/alternative-definition-of-spherical-harmonics-for-lighting/](https://grahamhazel.com/blog/2017/12/18/alternative-definition-of-spherical-harmonics-for-lighting/)
 
 AI disclaimer: all of the writing here is my own, not AI's, including the derivations. However the diagrams and formatting were done by AI, and I asked AI to check for mistakes.
-
-\* It makes me sad when I see a definition of SH that starts off by saying "they are the solution to the Legendre polynomials over the sphere". It almost feels like a statement meant to gatekeep.
