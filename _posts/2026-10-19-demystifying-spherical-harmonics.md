@@ -5,7 +5,9 @@ date: 2026-10-19
 latex: true
 ---
 
-Ever since I first heard of spherical harmonics as an approximation in computer graphics, I think when I was starting my career in 2011 or 2012, I have felt that the way they are explained is too complicated. Most explanations start with fairly abstract mathematical constructs, without giving much intuition or justification. In addition to making it harder to learn, I think the typical approach to SH can also lead to misapplication. So I've been wanting to write this post for a while, with a different way to look at SH that I hope is more straightforward and intuitive for some people.
+Ever since I first heard of spherical harmonics as an approximation in computer graphics, I think when I was starting my career in 2011 or 2012, I have felt that the way they are explained is too complicated. Most explanations start with fairly abstract mathematical constructs, without giving much intuition or justification. In addition to making it harder to learn, I think the typical approach to SH can also lead to misapplication. There's a lot of discussion about certain SH artifacts, but there is a class of problems with SH that are often ignored, which we'll talk about in [Questioning Our Assumptions](#questioning-our-assumptions).
+
+So I've been wanting to write this post for a while, with a different way to look at SH that I hope is more straightforward and intuitive for some people.
 
 Let's start with the engineering problem where you might want to use a spherical harmonic approximation.
 
@@ -63,33 +65,33 @@ We're going to derive the fast encoding from scratch, for both the $$c_0$$ term 
 
 We'll start with $$c_0$$. We want to find the $$c_0$$ that minimizes least squares errors. This is written as:
 
-$$\underset{c_0}{\operatorname{argmin}} \int_\Omega (\hat{f}(d) - f(d))^2 \, \mathrm{d}d$$
+$$\underset{c_0}{\operatorname{argmin}} \int_\Omega (\hat{f}(d) - f(d))^2 \, \mathrm{d}\omega$$
 
 But rather than using spherical integrals, we're going to switch to spherical \*averages\* (means), because minimizing the integral of squared error is the same as minimizing the average squared error. Formally, the average is the same as the integral divided by the surface area of the sphere:
 
-$$\langle f(d) \rangle_\Omega = \frac{\int_\Omega f(d) \, \mathrm{d}d}{4\pi}$$
+$$\langle f(d) \rangle_\Omega = \frac{\int_\Omega f(d) \, \mathrm{d}\omega}{4\pi}$$
 
 Doing this means that we can ignore the surface area of the sphere, which makes the math and programming easier. The notation for a spherical average uses the angle brackets $$\langle \, \rangle_\Omega$$. I am not the first person to use this to simplify SH, and I think Graham Hazel did the best job fleshing this out, but I'll link to that article in "Bridging the Gap". Anyway, so we are trying to solve:
 
 $$\underset{c_0}{\operatorname{argmin}} \langle (\hat{f}(d) - f(d))^2 \rangle_\Omega$$
 
-To find a minimum, we need to find the value of $$c_0$$ such that the first derivative of this is zero. Typically to minimize you'd also worry about local minima or finding maxima, but as we'll see, there is only one solution here. This function is concave, it has no maxima and only one minima.
+To find a minimum, we need to find the value of $$c_0$$ such that the first derivative of this is zero. Typically to minimize you'd also worry about local minima or finding maxima, but as we'll see, there is only one solution here. This function is convex, it has no maxima and only one minima.
 
-$$\frac{\mathrm{d} \langle (\hat{f}(d) - f(d))^2 \rangle_\Omega}{\mathrm{d}c_0} = 0$$
+$$\frac{\partial \langle (\hat{f}(d) - f(d))^2 \rangle_\Omega}{\partial c_0} = 0$$
 
 The derivative of an average is the average of the derivative:
 
-$$\left\langle \frac{\mathrm{d} (\hat{f}(d) - f(d))^2}{\mathrm{d}c_0} \right\rangle_\Omega = 0$$
+$$\left\langle \frac{\partial (\hat{f}(d) - f(d))^2}{\partial c_0} \right\rangle_\Omega = 0$$
 
 Typical power and chain rule:
 
-$$\left\langle 2 (\hat{f}(d) - f(d)) \frac{\mathrm{d}(\hat{f}(d) - f(d))}{\mathrm{d}c_0} \right\rangle_\Omega = 0$$
+$$\left\langle 2 (\hat{f}(d) - f(d)) \frac{\partial(\hat{f}(d) - f(d))}{\partial c_0} \right\rangle_\Omega = 0$$
 
-Now let's focus on $$\frac{\mathrm{d}(\hat{f}(d) - f(d))}{\mathrm{d}c_0}$$
+Now let's focus on $$\frac{\partial(\hat{f}(d) - f(d))}{\partial c_0}$$
 
-$$\frac{\mathrm{d}f(d)}{\mathrm{d}c_0}$$ is zero, because $$c_0$$ is unrelated to the original term.
+$$\frac{\partial f(d)}{\partial c_0}$$ is zero, because $$c_0$$ is unrelated to the original term.
 
-$$\frac{\mathrm{d}(c_0 + c_x d_x + c_y d_y + c_z d_z)}{\mathrm{d}c_0}$$ is simply $$1$$.
+$$\frac{\partial(c_0 + c_x d_x + c_y d_y + c_z d_z)}{\partial c_0}$$ is simply $$1$$.
 
 Plug this back a few lines up:
 
@@ -99,7 +101,7 @@ Divide by 2, and separate all the average terms, like this:
 
 $$\langle c_0 \rangle_\Omega + \langle c_x d_x \rangle_\Omega + \langle c_y d_y \rangle_\Omega + \langle c_z d_z \rangle_\Omega = \langle f(d) \rangle_\Omega$$
 
-Now the average $$\langle c_0 \rangle_\Omega$$ is of course $$c_0$$, it's a constant. $$\langle c_x d_x \rangle_\Omega$$ is 0, because it's symetrically distributed over a sphere (for every $$d_x$$ value, there is also a $$-d_x$$ value), and same for the other three terms. So we get this wonderfully intuitive and easy to calculate value.
+Now the average $$\langle c_0 \rangle_\Omega$$ is of course $$c_0$$, it's a constant. $$\langle c_x d_x \rangle_\Omega$$ is 0, because it's symetrically distributed over a sphere (for every $$d_x$$ value, there is also a $$-d_x$$ value), and same for the other two terms. So we get this wonderfully intuitive and easy to calculate value.
 
 $$c_0 = \langle f(d) \rangle_\Omega$$
 
@@ -109,15 +111,15 @@ Now let's do the same for $$c_x$$...
 
 $$\underset{c_x}{\operatorname{argmin}} \langle (\hat{f}(d) - f(d))^2 \rangle_\Omega$$
 
-skipping a few steps, we have
+like the previous derivation, we would first take the derivative and set it zero. Like before, we start with the chain rule and move the average outside the derivative.
 
-$$\left\langle (\hat{f}(d) - f(d)) \frac{\mathrm{d}(\hat{f}(d) - f(d))}{\mathrm{d}c_x} \right\rangle_\Omega = \langle f(d) \rangle_\Omega$$
+$$2 \left\langle (\hat{f}(d) - f(d)) \frac{\partial(\hat{f}(d) - f(d))}{\partial c_x} \right\rangle_\Omega = 0$$
 
-Focusing on the derivative term:
+Focusing on the inner derivative term, again we separate the terms, such that $$\frac{\partial(\hat{f}(d) - f(d))}{\partial c_x} = \frac{\partial\hat{f}(d)}{\partial c_x} - \frac{\partial f(d)}{\partial c_x}$$.
 
-$$\frac{\mathrm{d}f(d)}{\mathrm{d}c_x}$$ is still zero, because $$c_x$$ is unrelated to the original term.
+$$\frac{\partial f(d)}{\partial c_x}$$ is still zero, because $$c_x$$ is unrelated to the original term.
 
-$$\frac{\mathrm{d}(c_0 + c_x d_x + c_y d_y + c_z d_z)}{\mathrm{d}c_x}$$ is simply $$d_x$$.
+$$\frac{\partial\hat{f}(d)}{\partial c_x} = \frac{\partial(c_0 + c_x d_x + c_y d_y + c_z d_z)}{\partial c_x}$$ and that is simply $$d_x$$, because it's the only term with $$c_x$$.
 
 So now we have:
 
@@ -202,21 +204,21 @@ I'll spoil the surprise before doing the derivation this time. It turns out that
 
 Now we'll derive this. Let's say that a convolution takes in a spherical function or data, a direction, and outputs a value that is a weighted integral of the original spherical spherical data.
 
-$$g(f, v) = \int_\Omega h(v \cdot d) \, f(d) \, \mathrm{d}d$$
+$$g(f, v) = \int_\Omega h(v \cdot d) \, f(d) \, \mathrm{d}\omega$$
 
 NOTE: need to find the right definition of a convolution that is "constant" over the sphere. Something about the weighting function?
 
 Now we can also express our encoding as an integral, for example
 
-$$c_0(f) = \int_\Omega \frac{f(d)}{4\pi} \, \mathrm{d}d$$
+$$c_0(f) = \int_\Omega \frac{f(d)}{4\pi} \, \mathrm{d}\omega$$
 
 We want to get the encoding of our convolution:
 
-$$c_0(g(f)) = \int_\Omega \frac{\int_\Omega h(v \cdot d) \, f(d) \, \mathrm{d}d}{4\pi} \, \mathrm{d}v$$
+$$c_0(g(f)) = \int_\Omega \frac{\int_\Omega h(v \cdot d) \, f(d) \, \mathrm{d}\omega}{4\pi} \, \mathrm{d}v$$
 
 We can flip the nesting order of the integrals (think of them just like sums):
 
-$$c_0(g(f)) = \int_\Omega \frac{\int_\Omega h(v \cdot d) \, f(d) \, \mathrm{d}v}{4\pi} \, \mathrm{d}d$$
+$$c_0(g(f)) = \int_\Omega \frac{\int_\Omega h(v \cdot d) \, f(d) \, \mathrm{d}v}{4\pi} \, \mathrm{d}\omega$$
 
 And pull $$f(d)$$ out of the inner integral because it's unrelated to $$\mathrm{d}v$$
 
@@ -224,11 +226,11 @@ $$c_0(g(f)) = \int_\Omega \left( \int_\Omega h(v \cdot d) \, \mathrm{d}v \cdot \
 
 Now $$\int_\Omega h(v \cdot d) \, \mathrm{d}v$$ is a constant value, we'll call it $$k$$, so we have
 
-$$c_0(g(f)) = \int_\Omega \frac{k \, f(d)}{4\pi} \, \mathrm{d}d$$
+$$c_0(g(f)) = \int_\Omega \frac{k \, f(d)}{4\pi} \, \mathrm{d}\omega$$
 
 Pull the $$k$$ out of the integral, it's a constant:
 
-$$c_0(g(f)) = k \int_\Omega \frac{f(d)}{4\pi} \, \mathrm{d}d$$
+$$c_0(g(f)) = k \int_\Omega \frac{f(d)}{4\pi} \, \mathrm{d}\omega$$
 
 Which is simply
 
