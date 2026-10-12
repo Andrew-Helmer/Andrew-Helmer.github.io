@@ -18,13 +18,13 @@ We have a whole bunch of values that are oriented in different directions. In gr
 TODO: interactive diagram of a simple reflective sphere
 {: todo}
 
-For this one specific point in space, we can call these values a function $$f(d_x, d_y, d_z)$$, where the $$d$$ values are the x,y,z components of our direction $$d$$ (a unit vector). Remember $$f()$$ is the \*actual\* directional values. This is expensive. Alternatively you can pre-render a high resolution version of the spherical function, possibly storing in a cubemap or octahedral map. But this requires a lot of memory for every point in space.
+For this one specific point in space, we can call these values a function $$f(\omega_x, \omega_y, \omega_z)$$, where the $$\omega$$ values are the x,y,z components of our direction $$\omega$$ (a unit vector). Remember $$f()$$ is the \*actual\* directional values. This is expensive. Alternatively you can pre-render a high resolution version of the spherical function, possibly storing in a cubemap or octahedral map. But this requires a lot of memory for every point in space.
 
 If we don't need very high resolution, we may want to store a fast low resolution version, we'll call $$\hat{f}$$. A 6-pixel (one for each face) cubemap or 8-value octahedral map works in many cases, but there are downsides which I won't go into here.
 
 So instead, let's come up with just about the simplest function approximation we can think of, a linear model:
 
-$$\hat{f}(d_x, d_y, d_z) = c_0 + c_x d_x + c_y d_y + c_z d_z$$
+$$\hat{f}(\omega_x, \omega_y, \omega_z) = c_0 + c_x \omega_x + c_y \omega_y + c_z \omega_z$$
 
 Where we will store our four coefficients: $$c_0, c_x, c_y, c_z$$. Note that $$\hat{f}$$ is called "F hat" and the hat is common notation for approximations in statistics.
 
@@ -71,89 +71,89 @@ We're going to derive the fast encoding from scratch, for both the $$c_0$$ term 
 
 We'll start with $$c_0$$. We want to find the $$c_0$$ that minimizes least squares errors. This is written as:
 
-$$\underset{c_0}{\operatorname{argmin}} \int_\Omega (\hat{f}(d) - f(d))^2 \, \mathrm{d}\omega$$
+$$\underset{c_0}{\operatorname{argmin}} \int_\Omega (\hat{f}(\omega) - f(\omega))^2 \, \mathrm{d}\omega$$
 
 But rather than using spherical integrals, we're going to switch to spherical \*averages\* (means), because minimizing the integral of squared error is the same as minimizing the average squared error. Formally, the average is the same as the integral divided by the surface area of the sphere:
 
-$$\langle f(d) \rangle_\Omega = \frac{\int_\Omega f(d) \, \mathrm{d}\omega}{4\pi}$$
+$$\langle f(\omega) \rangle_\Omega = \frac{\int_\Omega f(\omega) \, \mathrm{d}\omega}{4\pi}$$
 
 Doing this means that we can ignore the surface area of the sphere, which makes the math and programming easier. The notation for a spherical average uses the angle brackets $$\langle \, \rangle_\Omega$$. I am not the first person to use this to simplify SH, and I think Graham Hazel did the best job fleshing this out, but I'll link to that article in "Bridging the Gap". Anyway, so we are trying to solve:
 
-$$\underset{c_0}{\operatorname{argmin}} \langle (\hat{f}(d) - f(d))^2 \rangle_\Omega$$
+$$\underset{c_0}{\operatorname{argmin}} \langle (\hat{f}(\omega) - f(\omega))^2 \rangle_\Omega$$
 
 To find a minimum, we need to find the value of $$c_0$$ such that the first derivative of this is zero. Typically to minimize you'd also worry about local minima or finding maxima, but as we'll see, there is only one solution here. This function is convex, it has no maxima and only one minima.
 
-$$\frac{\partial \langle (\hat{f}(d) - f(d))^2 \rangle_\Omega}{\partial c_0} = 0$$
+$$\frac{\partial \langle (\hat{f}(\omega) - f(\omega))^2 \rangle_\Omega}{\partial c_0} = 0$$
 
 The derivative of an average is the average of the derivative:
 
-$$\left\langle \frac{\partial (\hat{f}(d) - f(d))^2}{\partial c_0} \right\rangle_\Omega = 0$$
+$$\left\langle \frac{\partial (\hat{f}(\omega) - f(\omega))^2}{\partial c_0} \right\rangle_\Omega = 0$$
 
 Typical power and chain rule:
 
-$$\left\langle 2 (\hat{f}(d) - f(d)) \frac{\partial(\hat{f}(d) - f(d))}{\partial c_0} \right\rangle_\Omega = 0$$
+$$\left\langle 2 (\hat{f}(\omega) - f(\omega)) \frac{\partial(\hat{f}(\omega) - f(\omega))}{\partial c_0} \right\rangle_\Omega = 0$$
 
-Now let's focus on $$\frac{\partial(\hat{f}(d) - f(d))}{\partial c_0}$$
+Now let's focus on $$\frac{\partial(\hat{f}(\omega) - f(\omega))}{\partial c_0}$$
 
-$$\frac{\partial f(d)}{\partial c_0}$$ is zero, because $$c_0$$ is unrelated to the original term.
+$$\frac{\partial f(\omega)}{\partial c_0}$$ is zero, because $$c_0$$ is unrelated to the original term.
 
-$$\frac{\partial(c_0 + c_x d_x + c_y d_y + c_z d_z)}{\partial c_0}$$ is simply $$1$$.
+$$\frac{\partial(c_0 + c_x \omega_x + c_y \omega_y + c_z \omega_z)}{\partial c_0}$$ is simply $$1$$.
 
 Plug this back a few lines up:
 
-$$\langle 2 (\hat{f}(d) - f(d)) \cdot 1 \rangle_\Omega = 0$$
+$$\langle 2 (\hat{f}(\omega) - f(\omega)) \cdot 1 \rangle_\Omega = 0$$
 
 Divide by 2, and separate all the average terms, like this:
 
-$$\langle c_0 \rangle_\Omega + \langle c_x d_x \rangle_\Omega + \langle c_y d_y \rangle_\Omega + \langle c_z d_z \rangle_\Omega = \langle f(d) \rangle_\Omega$$
+$$\langle c_0 \rangle_\Omega + \langle c_x \omega_x \rangle_\Omega + \langle c_y \omega_y \rangle_\Omega + \langle c_z \omega_z \rangle_\Omega = \langle f(\omega) \rangle_\Omega$$
 
-Now the average $$\langle c_0 \rangle_\Omega$$ is of course $$c_0$$, it's a constant. $$\langle c_x d_x \rangle_\Omega$$ is 0, because it's symetrically distributed over a sphere (for every $$d_x$$ value, there is also a $$-d_x$$ value), and same for the other two terms. So we get this wonderfully intuitive and easy to calculate value.
+Now the average $$\langle c_0 \rangle_\Omega$$ is of course $$c_0$$, it's a constant. $$\langle c_x \omega_x \rangle_\Omega$$ is 0, because it's symetrically distributed over a sphere (for every $$\omega_x$$ value, there is also a $$-\omega_x$$ value), and same for the other two terms. So we get this wonderfully intuitive and easy to calculate value.
 
-$$c_0 = \langle f(d) \rangle_\Omega$$
+$$c_0 = \langle f(\omega) \rangle_\Omega$$
 
 The constant is just the average value of our function over the whole sphere\!
 
 Now let's do the same for $$c_x$$...
 
-$$\underset{c_x}{\operatorname{argmin}} \langle (\hat{f}(d) - f(d))^2 \rangle_\Omega$$
+$$\underset{c_x}{\operatorname{argmin}} \langle (\hat{f}(\omega) - f(\omega))^2 \rangle_\Omega$$
 
 like the previous derivation, we would first take the derivative and set it zero. Like before, we start with the chain rule and move the average outside the derivative.
 
-$$2 \left\langle (\hat{f}(d) - f(d)) \frac{\partial(\hat{f}(d) - f(d))}{\partial c_x} \right\rangle_\Omega = 0$$
+$$2 \left\langle (\hat{f}(\omega) - f(\omega)) \frac{\partial(\hat{f}(\omega) - f(\omega))}{\partial c_x} \right\rangle_\Omega = 0$$
 
-Focusing on the inner derivative term, again we separate the terms, such that $$\frac{\partial(\hat{f}(d) - f(d))}{\partial c_x} = \frac{\partial\hat{f}(d)}{\partial c_x} - \frac{\partial f(d)}{\partial c_x}$$.
+Focusing on the inner derivative term, again we separate the terms, such that $$\frac{\partial(\hat{f}(\omega) - f(\omega))}{\partial c_x} = \frac{\partial\hat{f}(\omega)}{\partial c_x} - \frac{\partial f(\omega)}{\partial c_x}$$.
 
-$$\frac{\partial f(d)}{\partial c_x}$$ is still zero, because $$c_x$$ is unrelated to the original term.
+$$\frac{\partial f(\omega)}{\partial c_x}$$ is still zero, because $$c_x$$ is unrelated to the original term.
 
-$$\frac{\partial\hat{f}(d)}{\partial c_x} = \frac{\partial(c_0 + c_x d_x + c_y d_y + c_z d_z)}{\partial c_x}$$ and that is simply $$d_x$$, because it's the only term with $$c_x$$.
+$$\frac{\partial\hat{f}(\omega)}{\partial c_x} = \frac{\partial(c_0 + c_x \omega_x + c_y \omega_y + c_z \omega_z)}{\partial c_x}$$ and that is simply $$\omega_x$$, because it's the only term with $$c_x$$.
 
 So now we have:
 
-$$\langle (\hat{f}(d) - f(d)) \, d_x \rangle_\Omega = 0$$
+$$\langle (\hat{f}(\omega) - f(\omega)) \, \omega_x \rangle_\Omega = 0$$
 
 or
 
-$$\langle \hat{f}(d) \, d_x \rangle_\Omega = \langle f(d) \, d_x \rangle_\Omega$$
+$$\langle \hat{f}(\omega) \, \omega_x \rangle_\Omega = \langle f(\omega) \, \omega_x \rangle_\Omega$$
 
-Expanding $$\hat{f}(d)$$ and separating the average terms, we have
+Expanding $$\hat{f}(\omega)$$ and separating the average terms, we have
 
-$$\langle c_0 d_x \rangle_\Omega + \langle c_x d_x^2 \rangle_\Omega + \langle c_y d_y d_x \rangle_\Omega + \langle c_z d_z d_x \rangle_\Omega = \langle f(d) \, d_x \rangle_\Omega$$
+$$\langle c_0 \omega_x \rangle_\Omega + \langle c_x \omega_x^2 \rangle_\Omega + \langle c_y \omega_y \omega_x \rangle_\Omega + \langle c_z \omega_z \omega_x \rangle_\Omega = \langle f(\omega) \, \omega_x \rangle_\Omega$$
 
-Because of spherical symmetry, every average term is zero except the $$d_x^2$$ one. So we have:
+Because of spherical symmetry, every average term is zero except the $$\omega_x^2$$ one. So we have:
 
-$$\langle c_x d_x^2 \rangle_\Omega = \langle f(d) \, d_x \rangle_\Omega$$
+$$\langle c_x \omega_x^2 \rangle_\Omega = \langle f(\omega) \, \omega_x \rangle_\Omega$$
 
-Because $$d$$ is a unit vector, we know that:
+Because $$\omega$$ is a unit vector, we know that:
 
-$$d_x^2 + d_y^2 + d_z^2 = 1$$
+$$\omega_x^2 + \omega_y^2 + \omega_z^2 = 1$$
 
 So we can also say
 
-$$\langle d_x^2 \rangle_\Omega + \langle d_y^2 \rangle_\Omega + \langle d_z^2 \rangle_\Omega = 1$$
+$$\langle \omega_x^2 \rangle_\Omega + \langle \omega_y^2 \rangle_\Omega + \langle \omega_z^2 \rangle_\Omega = 1$$
 
-Since a sphere is symetrical for all the three axes, the averages are all the same: $$\langle d_x^2 \rangle_\Omega = \langle d_y^2 \rangle_\Omega = \langle d_z^2 \rangle_\Omega$$, and we can substitute that in, so $$\langle d_x^2 \rangle_\Omega = 1/3$$. That gives us:
+Since a sphere is symetrical for all the three axes, the averages are all the same: $$\langle \omega_x^2 \rangle_\Omega = \langle \omega_y^2 \rangle_\Omega = \langle \omega_z^2 \rangle_\Omega$$, and we can substitute that in, so $$\langle \omega_x^2 \rangle_\Omega = 1/3$$. That gives us:
 
-$$c_x = 3 \langle f(d) \, d_x \rangle_\Omega$$
+$$c_x = 3 \langle f(\omega) \, \omega_x \rangle_\Omega$$
 
 Now you start to get a sense for why this is called "projection", because we're projecting the function onto the x directional component.
 
@@ -163,10 +163,10 @@ Now we have our super fast and easy encoding of coefficients for our linear mode
 
 $$
 \begin{aligned}
-c_0 &= \langle f(d) \rangle_\Omega \\
-c_x &= 3 \langle f(d) \, d_x \rangle_\Omega \\
-c_y &= 3 \langle f(d) \, d_y \rangle_\Omega \\
-c_z &= 3 \langle f(d) \, d_z \rangle_\Omega
+c_0 &= \langle f(\omega) \rangle_\Omega \\
+c_x &= 3 \langle f(\omega) \, \omega_x \rangle_\Omega \\
+c_y &= 3 \langle f(\omega) \, \omega_y \rangle_\Omega \\
+c_z &= 3 \langle f(\omega) \, \omega_z \rangle_\Omega
 \end{aligned}
 $$
 
@@ -181,7 +181,7 @@ For a long time I found spherical harmonics a bit scary. I don't know about you,
 
 Now that we've derived the fast encoding, let's reconsider some important assumptions we had to make. Typical applications of spherical harmonics in graphics violate at least one of these assumptions, sometimes two, often all three. Even when the assumptions are violated, spherical harmonics are still usually pretty good \*in practice\*, but sometimes the issues can be significant.
 
-\- Our reconstruction function is $$\hat{f}(d_x, d_y, d_z) = c_0 + c_x d_x + c_y d_y + c_z d_z$$  
+\- Our reconstruction function is $$\hat{f}(\omega_x, \omega_y, \omega_z) = c_0 + c_x \omega_x + c_y \omega_y + c_z \omega_z$$  
 \- We want to minimize least squares error, not some other error.  
 \- Our function or optimization domain is uniformly distributed around the unit sphere, in all directions.
 
@@ -189,7 +189,7 @@ The first assumption might seem comically obvious when encoding is derived in th
 
 But even the most vanilla implementations of SH almost always add a clamp to prevent negative lighting values:
 
-$$\hat{f}(d_x, d_y, d_z) = \max(c_0 + c_x d_x + c_y d_y + c_z d_z, 0)$$
+$$\hat{f}(\omega_x, \omega_y, \omega_z) = \max(c_0 + c_x \omega_x + c_y \omega_y + c_z \omega_z, 0)$$
 
 And in this case, "projection" is no longer the optimal least squares solution, and overall energy becomes biased \- the average lighting is too bright. That's not always necessarily bad, and I've even seen attempts to address it introduce worse problems. But it is possible to do better in specific cases. For example, SH approximations are often used to represent irradiance. In this case, the direction is a surface normal, and the value is the reflected light (equally in all directions, over the hemisphere) for a lambertian diffuse BRDF. 
 
@@ -215,34 +215,34 @@ I'll spoil the surprise before doing the derivation this time. It turns out that
 
 Now we'll derive this. Let's say that a convolution takes in a spherical function or data, a direction, and outputs a value that is a weighted integral of the original spherical spherical data.
 
-$$g(f, v) = \int_\Omega h(v \cdot d) \, f(d) \, \mathrm{d}\omega$$
+$$g(f, \omega') = \int_\Omega h(\omega' \cdot \omega) \, f(\omega) \, \mathrm{d}\omega$$
 
 TODO: need to find the right definition of a convolution that is "constant" over the sphere. Something about the weighting function?
 {: todo}
 
 Now we can also express our encoding as an integral, for example
 
-$$c_0(f) = \int_\Omega \frac{f(d)}{4\pi} \, \mathrm{d}\omega$$
+$$c_0(f) = \int_\Omega \frac{f(\omega)}{4\pi} \, \mathrm{d}\omega$$
 
 We want to get the encoding of our convolution:
 
-$$c_0(g(f)) = \int_\Omega \frac{\int_\Omega h(v \cdot d) \, f(d) \, \mathrm{d}\omega}{4\pi} \, \mathrm{d}v$$
+$$c_0(g(f)) = \int_\Omega \frac{\int_\Omega h(\omega' \cdot \omega) \, f(\omega) \, \mathrm{d}\omega}{4\pi} \, \mathrm{d}\omega'$$
 
 We can flip the nesting order of the integrals (think of them just like sums):
 
-$$c_0(g(f)) = \int_\Omega \frac{\int_\Omega h(v \cdot d) \, f(d) \, \mathrm{d}v}{4\pi} \, \mathrm{d}\omega$$
+$$c_0(g(f)) = \int_\Omega \frac{\int_\Omega h(\omega' \cdot \omega) \, f(\omega) \, \mathrm{d}\omega'}{4\pi} \, \mathrm{d}\omega$$
 
-And pull $$f(d)$$ out of the inner integral because it's unrelated to $$\mathrm{d}v$$
+And pull $$f(\omega)$$ out of the inner integral because it's unrelated to $$\mathrm{d}\omega'$$
 
-$$c_0(g(f)) = \int_\Omega \left( \int_\Omega h(v \cdot d) \, \mathrm{d}v \cdot \frac{f(d)}{4\pi} \right) \mathrm{d}\omega$$
+$$c_0(g(f)) = \int_\Omega \left( \int_\Omega h(\omega' \cdot \omega) \, \mathrm{d}\omega' \cdot \frac{f(\omega)}{4\pi} \right) \mathrm{d}\omega$$
 
-Now $$\int_\Omega h(v \cdot d) \, \mathrm{d}v$$ is a constant value, we'll call it $$k$$, so we have
+Now $$\int_\Omega h(\omega' \cdot \omega) \, \mathrm{d}\omega'$$ is a constant value, we'll call it $$k$$, so we have
 
-$$c_0(g(f)) = \int_\Omega \frac{k \, f(d)}{4\pi} \, \mathrm{d}\omega$$
+$$c_0(g(f)) = \int_\Omega \frac{k \, f(\omega)}{4\pi} \, \mathrm{d}\omega$$
 
 Pull the $$k$$ out of the integral, it's a constant:
 
-$$c_0(g(f)) = k \int_\Omega \frac{f(d)}{4\pi} \, \mathrm{d}\omega$$
+$$c_0(g(f)) = k \int_\Omega \frac{f(\omega)}{4\pi} \, \mathrm{d}\omega$$
 
 Which is simply
 
@@ -252,7 +252,7 @@ This might seem a bit mathy, but I think in plain English it's intuitive. $$c_0$
 
 We can do basically the same rearrangements for the other coefficients, and in the end, we get very simple scale factors. 
 
-In other words, given any convolution $$g(f)$$, we can precalculate four $$k$$ values, let’s say $$k_0, k_x, k_y, k_z$$. Then the convolved approximation $$g(\hat{f})(d)$$ and the approximation of the convolution $$\widehat{g(f)}(d)$$ are both just $$c_0 k_0 + c_x k_x d_x + c_y k_y d_y + c_z k_z d_z$$.
+In other words, given any convolution $$g(f)$$, we can precalculate four $$k$$ values, let’s say $$k_0, k_x, k_y, k_z$$. Then the convolved approximation $$g(\hat{f})(\omega)$$ and the approximation of the convolution $$\widehat{g(f)}(\omega)$$ are both just $$c_0 k_0 + c_x k_x \omega_x + c_y k_y \omega_y + c_z k_z \omega_z$$.
 
 Again, all of this is under the assumption that our integrals are uniformly oriented around a sphere. But if we're working on, say, hemispheres or arbitrary surfaces, things can get more complicated.
 
@@ -262,9 +262,9 @@ I'll add one other neat detail, which is that any "kernel transform" of a sphere
 
 Now let's say we want to use second-degree polynomials. We can add terms to our linear model to get this reconstruction function, which I'll call "Fast Reconstruction Form":
 
-$$\hat{f}(d_x, d_y, d_z) = c_0 + c_x d_x + c_y d_y + c_z d_z + c_{xy} d_x d_y + c_{xz} d_x d_z + c_{yz} d_y d_z + c_{x^2} d_x^2 + c_{y^2} d_y^2$$
+$$\hat{f}(\omega_x, \omega_y, \omega_z) = c_0 + c_x \omega_x + c_y \omega_y + c_z \omega_z + c_{xy} \omega_x \omega_y + c_{xz} \omega_x \omega_z + c_{yz} \omega_y \omega_z + c_{x^2} \omega_x^2 + c_{y^2} \omega_y^2$$
 
-You might notice that $$c_{z^2} d_z^2$$ is missing. This is because we know that this is a unit vector, so $$d_x^2 + d_y^2 + d_z^2 = 1$$, and so $$d_z^2 = 1 - d_x^2 - d_y^2$$, and those aspects are redundant with the coefficients $$c_0$$, $$c_{x^2}$$, and $$c_{y^2}$$.
+You might notice that $$c_{z^2} \omega_z^2$$ is missing. This is because we know that this is a unit vector, so $$\omega_x^2 + \omega_y^2 + \omega_z^2 = 1$$, and so $$\omega_z^2 = 1 - \omega_x^2 - \omega_y^2$$, and those aspects are redundant with the coefficients $$c_0$$, $$c_{x^2}$$, and $$c_{y^2}$$.
 
 But if we want to find the encoding rules like we did for the L1 model, things get a little more complicated. We have two options for how to approach things:
 
@@ -277,7 +277,7 @@ Option 1: Fast Reconstruction Form
 
 To understand why the encoding gets more complicated, we'll do some math using a simpler model of only one axis:
 
-$$\hat{f}(d_x) = c_0 + c_x d_x + c_{x^2} d_x d_x$$
+$$\hat{f}(\omega_x) = c_0 + c_x \omega_x + c_{x^2} \omega_x \omega_x$$
 
 Let's now rederive the least-squares solution for the $$c_0$$ term.
 
@@ -286,7 +286,7 @@ TODO: fill in here
 
 As we can see, $$c_0$$ is no longer a simple average and some of the terms seem to cross over and affect each other. I'm not going to derive everything, but if we use Fast Reconstruction Form
 
-$$\hat{f}(d_x, d_y, d_z) = c_0 + c_x d_x + c_y d_y + c_z d_z + c_{xy} d_x d_y + c_{xz} d_x d_z + c_{yz} d_y d_z + c_{x^2} d_x^2 + c_{y^2} d_y^2$$
+$$\hat{f}(\omega_x, \omega_y, \omega_z) = c_0 + c_x \omega_x + c_y \omega_y + c_z \omega_z + c_{xy} \omega_x \omega_y + c_{xz} \omega_x \omega_z + c_{yz} \omega_y \omega_z + c_{x^2} \omega_x^2 + c_{y^2} \omega_y^2$$
 
 Then we end up with these encoding rules:
 
