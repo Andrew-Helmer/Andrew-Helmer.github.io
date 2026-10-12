@@ -304,6 +304,20 @@ footer {
   left: -0.23em !important;
 }
 
+.callout-box {
+  width: fit-content;
+  max-width: 100%;
+  margin: 20px auto;
+  border: 1px solid $border;
+  background-color: $codeBg;
+  border-radius: 6px;
+  padding: 12px 24px;
+
+  .katex-display {
+    margin: 0;
+  }
+}
+
 // Settled on moving the import of syntax highlighting to the bottom of the CSS
 // ... Otherwise it really bloats up the top of the CSS file and makes it difficult to find the start
 @import "highlights";

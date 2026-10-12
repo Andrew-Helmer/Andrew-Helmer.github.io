@@ -24,9 +24,13 @@ If we don't need very high resolution, we may want to store a fast low resolutio
 
 So instead, let's come up with just about the simplest function approximation we can think of, a linear model:
 
-$$\hat{f}(\omega_x, \omega_y, \omega_z) = c_0 + c_x \omega_x + c_y \omega_y + c_z \omega_z$$
+<div class="callout-box" markdown="1">
 
-Where we will store our four coefficients: $$c_0, c_x, c_y, c_z$$. Note that $$\hat{f}$$ is called "F hat" and the hat is common notation for approximations in statistics.
+$$\hat{f}(\omega) = c_0 + c_x \omega_x + c_y \omega_y + c_z \omega_z$$
+
+</div>
+
+Where omega $$\omega$$ is a direction vector. We will precalculate and store our four coefficients: $$c_0, c_x, c_y, c_z$$. Note that $$\hat{f}$$ is called "F hat" and the hat is common notation for approximations in statistics.
 
 It might be obvious that you can think of the $$c_0$$ term as an overall intensity, and the $$c_x, c_y, c_z$$ as a directional intensity, for a particular direction.
 
@@ -73,6 +77,8 @@ We'll start with $$c_0$$. We want to find the $$c_0$$ that minimizes least squar
 
 $$\underset{c_0}{\operatorname{argmin}} \int_\Omega (\hat{f}(\omega) - f(\omega))^2 \, \mathrm{d}\omega$$
 
+In this case, the integral over big-omega $$\Omega$$ means we're integrating over the sphere, and the little omega $$\omega$$ represents a direction.
+
 But rather than using spherical integrals, we're going to switch to spherical \*averages\* (means), because minimizing the integral of squared error is the same as minimizing the average squared error. Formally, the average is the same as the integral divided by the surface area of the sphere:
 
 $$\langle f(\omega) \rangle_\Omega = \frac{\int_\Omega f(\omega) \, \mathrm{d}\omega}{4\pi}$$
@@ -87,7 +93,7 @@ $$\frac{\partial \langle (\hat{f}(\omega) - f(\omega))^2 \rangle_\Omega}{\partia
 
 The derivative of an average is the average of the derivative:
 
-$$\left\langle \frac{\partial (\hat{f}(\omega) - f(\omega))^2}{\partial c_0} \right\rangle_\Omega = 0$$
+$$\left\langle \frac{\partial (\hat{f}(\omega) - f(\omega)^2)}{\partial c_0} \right\rangle_\Omega = 0$$
 
 Typical power and chain rule:
 
@@ -111,19 +117,19 @@ Now the average $$\langle c_0 \rangle_\Omega$$ is of course $$c_0$$, it's a cons
 
 $$c_0 = \langle f(\omega) \rangle_\Omega$$
 
-The constant is just the average value of our function over the whole sphere\!
+**The constant is just the average value of our function over the whole sphere\!**
 
 Now let's do the same for $$c_x$$...
 
 $$\underset{c_x}{\operatorname{argmin}} \langle (\hat{f}(\omega) - f(\omega))^2 \rangle_\Omega$$
 
-like the previous derivation, we would first take the derivative and set it zero. Like before, we start with the chain rule and move the average outside the derivative.
+like the previous derivation, we would first take the derivative and set it zero. Like before, we start with the chain rule and power rule and move the average outside the derivative.
 
 $$2 \left\langle (\hat{f}(\omega) - f(\omega)) \frac{\partial(\hat{f}(\omega) - f(\omega))}{\partial c_x} \right\rangle_\Omega = 0$$
 
 Focusing on the inner derivative term, again we separate the terms, such that $$\frac{\partial(\hat{f}(\omega) - f(\omega))}{\partial c_x} = \frac{\partial\hat{f}(\omega)}{\partial c_x} - \frac{\partial f(\omega)}{\partial c_x}$$.
 
-$$\frac{\partial f(\omega)}{\partial c_x}$$ is still zero, because $$c_x$$ is unrelated to the original term.
+$$\frac{\partial f(\omega)}{\partial c_x}$$ is still zero, because $$c_x$$ is unrelated to the original function.
 
 $$\frac{\partial\hat{f}(\omega)}{\partial c_x} = \frac{\partial(c_0 + c_x \omega_x + c_y \omega_y + c_z \omega_z)}{\partial c_x}$$ and that is simply $$\omega_x$$, because it's the only term with $$c_x$$.
 
@@ -151,15 +157,17 @@ So we can also say
 
 $$\langle \omega_x^2 \rangle_\Omega + \langle \omega_y^2 \rangle_\Omega + \langle \omega_z^2 \rangle_\Omega = 1$$
 
-Since a sphere is symetrical for all the three axes, the averages are all the same: $$\langle \omega_x^2 \rangle_\Omega = \langle \omega_y^2 \rangle_\Omega = \langle \omega_z^2 \rangle_\Omega$$, and we can substitute that in, so $$\langle \omega_x^2 \rangle_\Omega = 1/3$$. That gives us:
+Since a sphere is symetrical for all the three axes, the averages are all the same: $$\langle \omega_x^2 \rangle_\Omega = \langle \omega_y^2 \rangle_\Omega = \langle \omega_z^2 \rangle_\Omega$$, and we can substitute that in, so $$3 \langle \omega_x^2 \rangle_\Omega = 1$$. That gives us:
 
 $$c_x = 3 \langle f(\omega) \, \omega_x \rangle_\Omega$$
 
-Now you start to get a sense for why this is called "projection", because we're projecting the function onto the x directional component.
+Now you start to get a sense for why this is called "projection". It looks like projecting the function onto the $$\omega_x$$ value, with a scale. This will be fleshed out a little more later.
 
 ### Encoding Rules
 
 Now we have our super fast and easy encoding of coefficients for our linear model:
+
+<div class="callout-box" markdown="1">
 
 $$
 \begin{aligned}
@@ -170,6 +178,8 @@ c_z &= 3 \langle f(\omega) \, \omega_z \rangle_\Omega
 \end{aligned}
 $$
 
+</div>
+
 And a little Python code can be written to estimate this numerically, like:
 
 TODO: python code to estimate the encoding numerically
@@ -179,13 +189,15 @@ For a long time I found spherical harmonics a bit scary. I don't know about you,
 
 ## Questioning Our Assumptions
 
-Now that we've derived the fast encoding, let's reconsider some important assumptions we had to make. Typical applications of spherical harmonics in graphics violate at least one of these assumptions, sometimes two, often all three. Even when the assumptions are violated, spherical harmonics are still usually pretty good \*in practice\*, but sometimes the issues can be significant.
+Now that we've derived the fast encoding, let's reconsider some important assumptions we had to make for this fast encoding to be the least-squares solution.
 
-\- Our reconstruction function is $$\hat{f}(\omega_x, \omega_y, \omega_z) = c_0 + c_x \omega_x + c_y \omega_y + c_z \omega_z$$  
-\- We want to minimize least squares error, not some other error.  
-\- Our function or optimization domain is uniformly distributed around the unit sphere, in all directions.
+1. Our reconstruction function is $$\hat{f}(\omega_x, \omega_y, \omega_z) = c_0 + c_x \omega_x + c_y \omega_y + c_z \omega_z$$  
+1. We want to minimize least squares error, not some other error.  
+1. Our function or optimization domain is uniformly distributed around the unit sphere, in all directions.
 
-The first assumption might seem comically obvious when encoding is derived in this way, but virtually all SH implementations violate it\! For one thing, there are improvements to spherical harmonics that use different forms of reconstruction, ie completely different models. Like the ZH3 hallucination, or the Geomerics reconstruction (this also includes a convolution).
+Typical applications of spherical harmonics in graphics violate at least one of these assumptions, sometimes two, often all three. Even when the assumptions are violated, spherical harmonics are still usually pretty good \*in practice\*, but sometimes the issues can be significant.
+
+The first assumption might seem comically obvious - of course the encoding only works for the reconstruction function that it was derived with\! But virtually all SH implementations in graphics violate it. For one thing, there are improvements to spherical harmonics that use different forms of reconstruction, ie completely different models. Like the ZH3 hallucination, or the Geomerics reconstruction (this also includes a convolution).
 
 But even the most vanilla implementations of SH almost always add a clamp to prevent negative lighting values:
 
