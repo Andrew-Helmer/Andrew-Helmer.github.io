@@ -56,9 +56,9 @@ The calculation of the coefficients is often called "encoding". In a machine lea
 
 Then evaluating the approximation function f^ I'll usually call reconstruction, but it could also be called decoding. In a ML context it might be called inference or estimation (or prediction, but that's not really appropriate here, since we're approximating something that's known, rather than predicting something unknown).
 
-We're going to derive the fast encoding from scratch, for both the c0 term and the cx term. The cy and cz terms are basically the same as cx. The derivation involves a small amount of calculus, but if you want, you can skip the DERIVATION section, and go to ENCODING RULES.
+We're going to derive the fast encoding from scratch, for both the c0 term and the cx term. The cy and cz terms are basically the same as cx. The derivation involves a small amount of calculus, but if you want, you can skip the [Derivation](#derivation) section, and go to [Encoding Rules](#encoding-rules).
 
-## Derivation
+### Derivation
 
 We'll start with c0. We want to find the c0 that minimizes least squares errors. This is written as:
 
@@ -148,7 +148,7 @@ c\_x \= 3\*\<f(d)\*d\_x\>
 
 Now you start to get a sense for why this is called "projection", because we're projecting the function onto the x directional component.
 
-## Encoding Rules
+### Encoding Rules
 
 Now we have our super fast and easy encoding of coefficients for our linear model:
 
