@@ -106,7 +106,7 @@ Anyway, I am not the first person to use spherical averages to simplify SH, and 
 
 $$\underset{c_0}{\operatorname{argmin}} \langle (\hat{f}(\omega) - f(\omega))^2 \rangle_\Omega$$
 
-To find a minimum, we need to find the value of $$c_0$$ such that the first derivative of this is zero. Typically to minimize you'd also worry about local minima or finding maxima, but as we'll see, there is only one solution here. This function is convex, it has no maxima and only one minima.
+To find a minimum, we need to find the value of $$c_0$$ such that the first derivative of this is zero. Typically to minimize you'd also worry about local minima or finding maxima, but as we'll see, there is only one solution here. This function is convex, it has no maxima and only one minimum.
 
 $$\frac{\partial \langle (\hat{f}(\omega) - f(\omega))^2 \rangle_\Omega}{\partial c_0} = 0$$
 
@@ -233,9 +233,9 @@ But even the most vanilla implementations of SH almost always add a clamp to pre
 
 $$\hat{f}(\omega_x, \omega_y, \omega_z) = \max(c_0 + c_x \omega_x + c_y \omega_y + c_z \omega_z, 0)$$
 
-And in this case, "projection" is no longer the optimal least squares solution, and overall energy becomes biased \- the average lighting is too bright. That's not always necessarily bad, and I've even seen attempts to address it introduce worse problems. But it is possible to do better in specific cases. For example, SH approximations are often used to represent irradiance. In this case, the direction is a surface normal, and the value is the reflected light (equally in all directions, over the hemisphere) for a lambertian diffuse BRDF. 
+And in this case, "projection" is no longer the optimal least squares solution, and overall energy becomes biased \- the average lighting is too bright. That's not always necessarily bad, and I've even seen attempts to address it introduce worse problems. But it is possible to do better in specific cases. For example, SH approximations are often used to represent reflected/outgoing radiance from a Lambertian/diffuse BRDF. In this case, the direction used is a surface normal (because for a given normal, light is equally reflected in all visible directions with this BRDF).
 
-For a single point light source, we can \*perfectly\* represent the irradiance using the clamped function, with zero error. But naive SH projection is overly soft, because it's minimizing error for the wrong reconstruction function.
+For a single point light source, we can \*perfectly\* represent the Lambertian reflected light using the clamped function, with zero error. But naive SH projection is overly soft, because it's minimizing error for the wrong reconstruction function.
 
 TODO: interactive diagram showing naive projection vs. clamped, where the light direction can be dragged around
 {: todo}
@@ -253,13 +253,13 @@ In practice, these may or may not be significant problems in your application, b
 
 Let's say we have an L1 spherical harmonic approximation, encoded with our 4 coefficients $$c_0, c_x, c_y, c_z$$. Then we have a spherical convolution $$g(f)$$, which could do something like "blur" or "sharpen" the approximation. 
 
-I'll spoil the surprise before doing the derivation this time. It turns out that for a given convolution $$g(f)$$, we can simply precompute 2 coefficient factors, one for $$c_0$$ and another that multiplies $$c_x, c_y, c_z$$. For example, let's say we have a Lambertian (diffuse) BRDF. For a given surface normal $$\omega$$, to "convolve" from incoming radiance for every direction to the reflected radiance (which is uniform across all reflection directions), you just multiply the $$c_x, c_y, c_z$$ components by $$2/3$$! This is taking into account the typical $$\frac{1}{\pi}$$ BRDF constant.
+I'll spoil the surprise before doing the derivation this time. It turns out that for a given convolution $$g(f)$$, we can simply precompute 2 coefficient factors, one for $$c_0$$ and another that multiplies $$c_x, c_y, c_z$$. For example, let's say we have a Lambertian (diffuse) BRDF. For a given surface normal $$n$$, to "convolve" from incoming radiance for every direction to the reflected radiance (which is uniform across all reflection directions), you just multiply the $$c_x, c_y, c_z$$ components by $$2/3$$! This is taking into account the typical $$\frac{1}{\pi}$$ BRDF constant.
 
 Now we'll derive this. Let's say that a convolution takes in a spherical function or data, a direction, and outputs a value that is a weighted integral of the original spherical data.
 
-$$g(f, \omega') = \int_\Omega h(\omega' \cdot \omega) \, f(\omega) \, \mathrm{d}\omega$$
+$$g(f, n) = \int_\Omega h(n \cdot \omega) \, f(\omega) \, \mathrm{d}\omega$$
 
-Note that the convolution kernel $$h$$ doesn't depend on two arbitrary directions, only the dot product (i.e. angle) between them. This means the convolution is symmetric around the direction $$\omega'$$, and the same everywhere around the sphere.
+Note that the convolution kernel $$h$$ doesn't depend on two arbitrary directions, only the dot product (i.e. angle) between them. This means the convolution is symmetric around the direction $$n$$, and the same everywhere around the sphere.
 
 Now we can also express our encoding as an integral, for example
 
@@ -267,17 +267,17 @@ $$c_0(f) = \int_\Omega \frac{f(\omega)}{4\pi} \, \mathrm{d}\omega$$
 
 We want to get the encoding of our convolution:
 
-$$c_0(g(f)) = \int_\Omega \frac{\int_\Omega h(\omega' \cdot \omega) \, f(\omega) \, \mathrm{d}\omega}{4\pi} \, \mathrm{d}\omega'$$
+$$c_0(g(f)) = \int_\Omega \frac{\int_\Omega h(n \cdot \omega) \, f(\omega) \, \mathrm{d}\omega}{4\pi} \, \mathrm{d}n$$
 
 We can flip the nesting order of the integrals (think of them just like sums):
 
-$$c_0(g(f)) = \int_\Omega \frac{\int_\Omega h(\omega' \cdot \omega) \, f(\omega) \, \mathrm{d}\omega'}{4\pi} \, \mathrm{d}\omega$$
+$$c_0(g(f)) = \int_\Omega \frac{\int_\Omega h(n \cdot \omega) \, f(\omega) \, \mathrm{d}n}{4\pi} \, \mathrm{d}\omega$$
 
-And pull $$f(\omega)$$ out of the inner integral because it's unrelated to $$\mathrm{d}\omega'$$
+And pull $$f(\omega)$$ out of the inner integral because it's unrelated to $$\mathrm{d}n$$
 
-$$c_0(g(f)) = \int_\Omega \left( \int_\Omega h(\omega' \cdot \omega) \, \mathrm{d}\omega' \cdot \frac{f(\omega)}{4\pi} \right) \mathrm{d}\omega$$
+$$c_0(g(f)) = \int_\Omega \left( \int_\Omega h(n \cdot \omega) \, \mathrm{d}n \cdot \frac{f(\omega)}{4\pi} \right) \mathrm{d}\omega$$
 
-Now $$\int_\Omega h(\omega' \cdot \omega) \, \mathrm{d}\omega'$$ is a constant value, we'll call it $$k$$, so we have
+Now $$\int_\Omega h(n \cdot \omega) \, \mathrm{d}n$$ is a constant value, we'll call it $$k$$, so we have
 
 $$c_0(g(f)) = \int_\Omega \frac{k \, f(\omega)}{4\pi} \, \mathrm{d}\omega$$
 
@@ -297,7 +297,7 @@ In other words, given any convolution $$g(f)$$, we can precalculate two $$k$$ va
 
 Again, all of this is under the assumption that our integrals are uniformly oriented around a sphere. But if we're working on, say, hemispheres or arbitrary surfaces, things can get more complicated.
 
-I'll add one other neat detail, which is that any "kernel transform" of a sphere (this could also include rotations, squishing, etc.) can be baked into a $$n \times n$$ matrix for $$n$$ spherical harmonic coefficients, and transforming an encoding is just a matrix multiplication. Convolution is a special case where it’s a diagonal matrix.
+I'll add one other neat detail, which is that any linear transformation on a sphere (this could also include rotations, squishing, etc.) can be baked into a $$n \times n$$ matrix for $$n$$ spherical harmonic coefficients, and transforming an encoding is just a matrix multiplication. Convolution is a special case where it’s a diagonal matrix.
 
 ## Higher Degree Polynomials
 
@@ -323,7 +323,7 @@ But if we want to find the encoding rules like we did for the L1 model, things g
 Option 1: Keep reconstruction as cheap as possible (Fast Reconstruction Form), use the simple linear model given above.  
 Option 2: Keep convolution as cheap as possible in many cases, and keep reconstruction more straightforward.
 
-Let's start with Option 1 because it's more informative as to why it’s problematic. In practice I would typically use Option 2 in the same, real-time graphics. But Option 1 I’d use in any situation where we’re actually doing gradient descent anyway (say, as part of some other ML model).
+Let's start with Option 1 because it's more informative as to why it’s problematic. In practice I would typically use Option 2 in real-time graphics. But Option 1 I’d use in any situation where we’re actually doing gradient descent anyway (say, as part of some other ML model).
 
 ### Fast Reconstruction Form (FRF)
 
@@ -437,7 +437,7 @@ $$
 
 </div>
 
-Note that the coefficients have different subscripts now and the terms have been rearranged a bit, this is to be more consistent with typical spherical harmonic definitions. The important thing is the changed "features" or "columns" as we'd call them in ML and stats, creates cancellation in the derivations. So we end up with encoding rules where there's a nice reflection of the reconstruction function, looking more like projection with some constants.
+Note that the coefficients have different subscripts now and the terms have been rearranged a bit, this is to be more consistent with typical spherical harmonic definitions. The important thing is that the changed "features" or "columns" (as we'd call them in ML or stats) create cancellation in the encoding derivations. So we end up with encoding rules where there's a nice reflection of the reconstruction function, looking more like projection with some constants.
 
 <div class="callout-box" markdown="1">
 
