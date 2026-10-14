@@ -7,22 +7,26 @@ latex: true
 
 {:todo: style="color: red"}
 
-Ever since I first heard of spherical harmonics as an approximation in computer graphics, I think when I was starting my career in 2011 or 2012, I have felt that the way they are explained is too complicated. Most explanations start with fairly abstract mathematical constructs, without giving much intuition or justification. In addition to making it harder to learn, I think the typical approach to SH can also lead to misapplication. There's a lot of discussion about certain SH artifacts, but there is a class of problems with SH that are often ignored, which we'll talk about in [Questioning Our Assumptions](#questioning-our-assumptions).
+Ever since I first heard of spherical harmonics as an approximation in computer graphics, I think when I was starting my career in 2011 or 2012, I have felt that the way they are explained is too complicated. Sometimes they assume a prerequisite amount of math knowledge that isn't really necessary, and tend to be very abstract. Other times they show something very complex and through a lot of effort end up simplifying them to something usable. In addition to making it harder to learn, I think those approaches to SH can lead to misapplication. There's a lot of discussion about certain SH artifacts, but there is a class of problems with SH that are often ignored, which we'll talk about in [Questioning Our Assumptions](#questioning-our-assumptions).
 
-So I've been wanting to write this post for a while, with a different way to look at SH that I hope is more straightforward and intuitive for some people.
+In this post, what we're going to do is start with a common problem in graphics, solve it as simply as we can, and end up with something that is actually equivalent to SH approximations. I hope that this is more straightforward and intuitive for some people. This is aimed towards people who want to learn to use SH in graphics, but even if you already know how to use SH in graphics, I hope that this perspective is useful.
 
-Let's start with the engineering problem where you might want to use a spherical harmonic approximation.
+## Spherical Data
 
-We have a whole bunch of values that are oriented in different directions. In graphics, a common example of this is the incoming light (radiance) at a particular point in space. Here is a little interactive visualization where you can either see the lighting value along each surface normal (spherical projection), or as a reflection.
+So let's start with the engineering problem. We have a whole bunch of values that are oriented in different directions. In graphics, a common example of this is the incoming light (radiance) at a particular point in space, which has a different value in different directions. For this one specific point in space, we can call these values a function $$f(\omega)$$, where omega $$\omega$$ is a direction, with components $$\langle \omega_x, \omega_y, \omega_z \rangle$$ and $$\omega_x^2 + \omega_y^2 + \omega_z^2 = 1$$. In other words, it's a unit vector.
+
+This visualization is a simple example of what this function might look like. You can see the spherical directions from the surface normal, or view the incoming light via a reflection (bounced rays) in a chrome ball.
 
 TODO: interactive diagram of a simple reflective sphere
 {: todo}
 
-For this one specific point in space, we can call these values a function $$f(\omega_x, \omega_y, \omega_z)$$, where the $$\omega$$ values are the x,y,z components of our direction $$\omega$$ (a unit vector). Remember $$f()$$ is the \*actual\* directional values. This is expensive. Alternatively you can pre-render a high resolution version of the spherical function, possibly storing in a cubemap or octahedral map. But this requires a lot of memory for every point in space.
+For a given direction, calculating the value is expensive. It could mean ray-tracing, path-tracing, or rasterizing a pixel. In something like a game, you typically don't want to do this with every point that you want to shade. Alternatively, you can pre-render a high resolution version of the spherical function, possibly storing in a cubemap or octahedral map. But this requires a lot of memory for many points in space.
 
-If we don't need very high resolution, we may want to store a fast low resolution version, we'll call $$\hat{f}$$. A 6-pixel (one for each face) cubemap or 8-value octahedral map works in many cases, but there are downsides which I won't go into here.
+If we don't need very high resolution, instead we may want to store a fast very low resolution version, we'll call $$\hat{f}$$. Note that $$\hat{f}$$ is called "F hat" and the hat is common notation for approximations in statistics.
 
-So instead, let's come up with just about the simplest function approximation we can think of, a linear model:
+A 6-pixel (one for each face) cubemap or 8-value octahedral map works in many cases, but there are downsides which I won't go into here.
+
+So instead, let's come up a simple approximation of the function. A linear model like this is just about the simplest reasonable approximation I can think of (aside from a flat constant):
 
 <div class="callout-box" markdown="1">
 
@@ -30,48 +34,61 @@ $$\hat{f}(\omega) = c_0 + c_x \omega_x + c_y \omega_y + c_z \omega_z$$
 
 </div>
 
-Where omega $$\omega$$ is a direction vector. We will precalculate and store our four coefficients: $$c_0, c_x, c_y, c_z$$. Note that $$\hat{f}$$ is called "F hat" and the hat is common notation for approximations in statistics.
+Where we will precalculate and store our four coefficients: $$c_0, c_x, c_y, c_z$$. 
 
 It might be obvious that you can think of the $$c_0$$ term as an overall intensity, and the $$c_x, c_y, c_z$$ as a directional intensity, for a particular direction.
 
 TODO: interactive diagram showing simple spherical approximation
 {: todo}
 
-So how do we get these four coefficients? A quick idea might be to minimize the (sum/average/integrated) square error against the original function or a high-resolution version. In other words, a good old fashioned linear regression. In this code we'll sample some random directions and regress on those.
+So how do we get these four coefficients? A quick idea might be to use the coefficients that minimize the (sum/average/integrated) square error against the original function or a high-resolution version. In other words, a good old fashioned linear regression. In this code we'll sample some random directions and regress on those.
 
-TODO: python code for linear regression
-{: todo}
+{% highlight python linenos %}
+def encode_linear_coefficients(spherical_fn, num_dirs=8192, seed=None):
+    dirs = generate_uniform_sphere_dirs(num_dirs, seed=seed)
+    spherical_values = [spherical_fn(dir) for dir in dirs]
 
-This gives us a pretty simple spherical approximation.
+    # Calculate four linear coefficients for model with a constant
+    # Construct the design matrix A: [1, x, y, z]
+    A = np.hstack((np.ones((num_dirs, 1)), dirs))
+    y = np.array(spherical_values)
+
+    # Solve for least squares: A * c = y
+    coefficients, _, _, _ = np.linalg.lstsq(A, y, rcond=None)
+
+    return coefficients
+{% endhighlight %}
+
+These coefficients gives us a pretty simple spherical approximation.
 
 TODO: interactive diagram of sphere with spherical projection of original image, vs. linear model, with coefficients that can be manipulated or "reset"
 {: todo}
 
 Well, we pretty much just reinvented spherical harmonic approximations\! Yup, really. This is most likely something countless people have done without even realizing that what they did was equivalent to using SH.
 
-Maybe it would be more accurate to say that this is a valid, though inefficient, implementation of a specific SH approximation. We would call this an $$l = 1$$, or L1, spherical harmonics approximation, where "$$l$$" is the degree of the polynomial. You can also have a $$l = 0$$ SH approximation, with a single constant like $$\hat{f}() = c_0$$, or higher $$l$$ values that store coefficients for higher degrees of polynomials, like $$l = 2$$ includes the terms $$x^2$$, $$xy$$, $$xz$$, $$y^2$$, etc. each with their own coefficient. Higher degree polynomials have a bit of extra complexity we'll talk about later, but it's still just a basic linear model, with a least squares fit\!
+Maybe it would be more accurate to say that this is a valid, though inefficient, implementation of a specific SH approximation. We would call this an $$l = 1$$, or L1, spherical harmonics approximation, where "$$l$$" is the degree of the polynomial. You can also have a $$l = 0$$ SH approximation, with a single constant like $$\hat{f}(\omega) = c_0$$, or higher $$l$$ values that store coefficients for higher degrees of polynomials, like $$l = 2$$ includes the terms $$x^2$$, $$xy$$, $$xz$$, $$y^2$$, etc. each with their own coefficient. Higher degree polynomials have a bit of extra complexity we'll talk about later, but it's still just a basic linear model, with a least squares fit\!
 
-So anyway, spherical harmonic approximations are pretty much the blandest approximation model you could think of to represent a spherical function. If this is the first time you're learning about SH, you might be thinking... why do we even use a special name for a basic linear model?
+Spherical harmonic approximations are actually nearly the blandest approximation model you could think of to represent a spherical function. If this is the first time you're learning about SH, you might be thinking... why do we even use a special name for a basic linear model?
 
-You may notice that I've been saying SH approximations rather than just SH. A big part of the answer is the difference between theory (spherical harmonics) and application (SH approximations), as I alluded to at the beginning. Also part of the answer is due to the history of the application of SH to graphics, and due to the relationships with other things in math.
+You may notice that I've been saying SH *approximations* rather than just SH. A big part of why we have a special name is the difference between the mathematical construct (spherical harmonics) and the application of them (SH approximations). Also part of the answer is due to the history of the application of SH to graphics, and due to the relationships with other things in math.
 
 But SH approximations are also special compared to other linear models, because of two interesting properties:  
-1\. Very fast and simple calculation of the coefficients (encoding)  
-2\. Very fast convolutions of the spherical harmonic approximation
+1. Very fast and simple calculation of the coefficients (encoding)  
+2. Very fast convolutions of the spherical harmonic approximation
 
 In graphics, performance is really important, so being able to do these things fast is a big part of why SH approximations are used at all.
 
-As I'll show shortly, the first property is because the domain we are optimizing least squares over is the uniform distribution over the unit sphere, rather than any arbitrary distribution of x,y,z values.
+As I'll show shortly, the first property is because we are optimizing least squares over the uniformly weighted unit sphere, rather than any arbitrary distribution of x,y,z values.
 
-## Encoding the Linear Model Coefficients
+## Fast Calculation of the (L1) Linear Model Coefficients
 
 The calculation of the coefficients is often called "encoding". In a machine learning context this would often be called regression or fitting or learning or maybe compressing or mayyybe training. When it comes to spherical harmonics, the fast \*method\* of encoding is specifically called "projection" for reasons that we'll discuss later.
 
 Then evaluating the approximation function $$\hat{f}$$ I'll usually call reconstruction, but it could also be called decoding. In a ML context it might be called inference or estimation (or prediction, but that's not really appropriate here, since we're approximating something that's known, rather than predicting something unknown).
 
-We're going to derive the fast encoding from scratch, for both the $$c_0$$ term and the $$c_x$$ term. The $$c_y$$ and $$c_z$$ terms are basically the same as $$c_x$$. The derivation involves a small amount of calculus, but if you want, you can skip the [Derivation](#derivation) section, and go to [Encoding Rules](#encoding-rules).
+We're going to derive the fast encoding from scratch, for both the $$c_0$$ term and the $$c_x$$ term. The $$c_y$$ and $$c_z$$ terms are basically the same as $$c_x$$. The derivation involves a small amount of calculus, but if you want, you can skip the [L1 Encoding Derivation](#l1-encoding-derivation) section, and go to [L1 Encoding Rules](#l1-encoding-rules).
 
-### Derivation
+### L1 Encoding Derivation
 
 We'll start with $$c_0$$. We want to find the $$c_0$$ that minimizes least squares errors. This is written as:
 
@@ -83,7 +100,9 @@ But rather than using spherical integrals, we're going to switch to spherical \*
 
 $$\langle f(\omega) \rangle_\Omega = \frac{\int_\Omega f(\omega) \, \mathrm{d}\omega}{4\pi}$$
 
-Doing this means that we can ignore the surface area of the sphere, which makes the math and programming easier. The notation for a spherical average uses the angle brackets $$\langle \, \rangle_\Omega$$. I am not the first person to use this to simplify SH, and I think Graham Hazel did the best job fleshing this out, but I'll link to that article in "Bridging the Gap". Anyway, so we are trying to solve:
+Doing this means that we can ignore the surface area of the sphere, which makes the math and programming easier. The notation I will use for a spherical average uses the angle brackets $$\langle \, \rangle_\Omega$$. The more standard notation drops the $$\Omega$$ subscript, but I think it's clearer to keep it, especially to distinguish between vectors which also use the angle brackets. 
+
+Anyway, I am not the first person to use spherical averages to simplify SH, and I think Graham Hazel did the best job fleshing this out, but I'll link to that article in the [Bridging the Gap](#bridging-the-gap) section. Anyway, so we are trying to solve:
 
 $$\underset{c_0}{\operatorname{argmin}} \langle (\hat{f}(\omega) - f(\omega))^2 \rangle_\Omega$$
 
@@ -163,7 +182,7 @@ $$c_x = 3 \langle f(\omega) \, \omega_x \rangle_\Omega$$
 
 Now you start to get a sense for why this is called "projection". It looks like projecting the function onto the $$\omega_x$$ value, with a scale. This will be fleshed out a little more later.
 
-### Encoding Rules
+### L1 Encoding Rules
 
 Now we have our super fast and easy encoding of coefficients for our linear model:
 
@@ -182,10 +201,21 @@ $$
 
 And a little Python code can be written to estimate this numerically, like:
 
-TODO: python code to estimate the encoding numerically
-{: todo}
+{% highlight python linenos %}
+def encode_linear_coefficients_fast(spherical_fn, num_dirs=8192, seed=None):
+    dirs = generate_uniform_sphere_dirs(num_dirs, seed=seed)
 
-For a long time I found spherical harmonics a bit scary. I don't know about you, but derived this way, I find it hard to imagine a simpler spherical approximation\! It's a single line of code to evaluate, and only a few lines of code to encode, and the derivation is not really hard. And on top of that, it's doing something that many engineers are already familiar with, just a simple linear model with least squares, plus a trick to encode the coefficients in a faster way.
+    mean = np.array([0.0, 0.0, 0.0, 0.0])
+    for i, dir in enumerate(dirs, 1):
+        value = spherical_fn(dir)
+        sample = np.array([1.0, 3.0*dir[0], 3.0*dir[1], 3.0*dir[2]]) * value
+        # Welford's method for computing the mean
+        mean += (sample - mean) / i
+
+    return mean
+{% endhighlight %}
+
+For a long time I found spherical harmonics a bit scary. Personally, derived this way, I find it hard to imagine a simpler spherical approximation to understand and implement\! It's a single line of code to evaluate, and only a few lines of code to encode, and the derivation is not really hard. And on top of that, it's doing something that many engineers are already familiar with, just a simple linear model with least squares, plus a trick to encode the coefficients in a faster way.
 
 ## Questioning Our Assumptions
 
@@ -272,9 +302,20 @@ I'll add one other neat detail, which is that any "kernel transform" of a sphere
 
 ## Higher Degree Polynomials
 
-Now let's say we want to use second-degree polynomials. We can add terms to our linear model to get this reconstruction function, which I'll call "Fast Reconstruction Form":
+Now let's say we want to use second-degree polynomials (L2). We can add terms to our linear model to get this reconstruction function, which I'll call **"Fast Reconstruction Form"** or **FRF**:
 
-$$\hat{f}(\omega_x, \omega_y, \omega_z) = c_0 + c_x \omega_x + c_y \omega_y + c_z \omega_z + c_{xy} \omega_x \omega_y + c_{xz} \omega_x \omega_z + c_{yz} \omega_y \omega_z + c_{x^2} \omega_x^2 + c_{y^2} \omega_y^2$$
+<div class="callout-box" markdown="1">
+
+$$
+\begin{aligned}
+\hat{f}(\omega_x, \omega_y, \omega_z) = {} & c_0 \\
+& + c_x \omega_x + c_y \omega_y + c_z \omega_z \\
+& + c_{xy} \omega_x \omega_y + c_{xz} \omega_x \omega_z + c_{yz} \omega_y \omega_z \\
+& + c_{x^2} \omega_x^2 + c_{y^2} \omega_y^2
+\end{aligned}
+$$
+
+</div>
 
 You might notice that $$c_{z^2} \omega_z^2$$ is missing. This is because we know that this is a unit vector, so $$\omega_x^2 + \omega_y^2 + \omega_z^2 = 1$$, and so $$\omega_z^2 = 1 - \omega_x^2 - \omega_y^2$$, and those aspects are redundant with the coefficients $$c_0$$, $$c_{x^2}$$, and $$c_{y^2}$$.
 
@@ -285,38 +326,111 @@ Option 2: Keep convolution as cheap as possible in many cases, and keep reconstr
 
 Let's start with Option 1 because it's more informative as to why it’s problematic. In practice I would typically use Option 2 in the same, real-time graphics. But Option 1 I’d use in any situation where we’re actually doing gradient descent anyway (say, as part of some other ML model).
 
-Option 1: Fast Reconstruction Form
+### Fast Reconstruction Form (FRF)
 
 To understand why the encoding gets more complicated, we'll do some math using a simpler model of only one axis:
 
-$$\hat{f}(\omega_x) = c_0 + c_x \omega_x + c_{x^2} \omega_x \omega_x$$
+$$\hat{f}(\omega_x) = c_0 + c_x \omega_x + c_{x^2} \omega_x^2$$
 
-Let's now rederive the least-squares solution for the $$c_0$$ term.
+We'll now rederive the encoding rules for all three coefficients. Even though it's only one axis, this is a little bit denser than the L1 derivation and I'm going to skip more within it, so feel free to jump ahead to the [L2 Encoding Rules](#l2-encoding-rules).
 
-TODO: fill in here
+#### L2 One-Axis Encoding Derivation
+
+Again we start with taking the partial derivative and setting it equal to zero.
+
+$$\frac{\partial \langle (\hat{f}(\omega) - f(\omega))^2 \rangle_\Omega}{\partial c_0} = 0$$
+
+I'll skip a few of the simple steps from before, application of the chain and power rules, dividing by two, and that $$\frac{\partial \hat{f}(\omega) - f(\omega)}{\partial c_0}$$ simplifies
+to $$1$$, and we get
+
+$$ \langle c_0 + c_x \omega_x + c_{x^2} \omega_x^2 - f(\omega) \rangle_\Omega = 0 $$
+
+Moving terms around, and taking advantage of the knowledge that $$ \langle \omega_x \rangle_\Omega = 0 $$, we get
+
+$$ c_0 = \langle f(\omega) - c_{x^2} \omega_x^2\rangle_\Omega $$
+
+As we can see, $$c_0$$ is no longer a simple average of the function. It's related to the value of $$c_{x^2}$$. We'll need to solve for this.
+
+Next up is $$ c_x $$. I'm going to mostly skip this, because it ends up the same as in the L1 Encoding Derivation, due to the fact that every *odd* power of $$\omega_x$$ has an average value of zero over the sphere, giving us:
+
+$$ c_x = 3 \langle f(\omega) \, \omega_x \rangle_\Omega$$
+
+Finally we have $$ c_{x^2} $$.
+
+The first few steps work out again like this:
+
+$$ \langle c_0 + c_x \omega_x + c_{x^2} \omega_x^2 - f(\omega) \rangle_\Omega \omega_x^2 = 0 $$
+
+Before we showed that $$\langle \omega_x^2 \rangle_\Omega = \frac{1}{3}$$. And we know that $$ \langle \omega_x^3 \rangle_Omega = 0$$. I won't derive this here, but $$ \langle \omega_x^4 \rangle_Omega = \frac{1}{5}$$. 
+
+So this gives us
+
+$$ c_{x^2} = \langle 5 f(\omega) \omega^2 \rangle_Omega - \frac{5 c_0}{3} $$
+
+Now we have a linear system (two variables $$c_0$$ and $$c_{x^2}$$, two equations). Most general way to solve this is to reformulate it with a matrix form:
+
+$$
+\begin{bmatrix}
+1 & \frac{1}{3} \\
+\frac{1}{3} & \frac{1}{5}
+\end{bmatrix}
+\begin{bmatrix}
+c_0 \\
+c_{x^2}
+\end{bmatrix}
+=
+\begin{bmatrix}
+\langle f(\omega) \rangle_\Omega \\
+\langle f(\omega) \, \omega_x^2 \rangle_\Omega
+\end{bmatrix}
+$$
+
+And this can be solved with Gaussian elimination, or inverting the matrix and multiplying by the left-hand side of each.
+
+Finally for our one-axis model, we get this:
+
+$$
+\begin{alignedat}{3}
+&c_0 &&{}= \phantom{-}\kern 0.25em \frac{9}{4} \kern 0.25em &&\langle f(\omega) \rangle_\Omega - \frac{15}{4} \langle f(\omega) \, \omega_x^2 \rangle_\Omega \\
+&c_x &&{}= \phantom{-}\kern 0.37em 3 &&\langle f(\omega) \, \omega_x \rangle_\Omega \\
+&c_{x^2} &&{}= -\frac{15}{4} &&\langle f(\omega) \rangle_\Omega + \frac{45}{4} \langle f(\omega) \, \omega_x^2 \rangle_\Omega
+\end{alignedat}
+$$
+
+#### L2 (FRF) Encoding Rules
+
+The multi-axis model is a bit more complicated, but it ends up with these full encoding rules.
+
+<div class="callout-box" markdown="1">
+
+$$
+\begin{alignedat}{4}
+&c_0 &&{}= \phantom{-}6 \langle f(\omega) \rangle_\Omega &&{}- \frac{15}{2} \langle f(\omega) \, \omega_x^2 \rangle_\Omega &&{}- \frac{15}{2} \langle f(\omega) \, \omega_y^2 \rangle_\Omega \\
+&c_x &&{}= \mathrlap{\phantom{-}3 \langle f(\omega) \, \omega_x \rangle_\Omega} && && \\
+&c_y &&{}= \mathrlap{\phantom{-}3 \langle f(\omega) \, \omega_y \rangle_\Omega} && && \\
+&c_z &&{}= \mathrlap{\phantom{-}3 \langle f(\omega) \, \omega_z \rangle_\Omega} && && \\
+&c_{xy} &&{}= \mathrlap{\phantom{-}15 \langle f(\omega) \, \omega_x \omega_y \rangle_\Omega} && && \\
+&c_{xz} &&{}= \mathrlap{\phantom{-}15 \langle f(\omega) \, \omega_x \omega_z \rangle_\Omega} && && \\
+&c_{yz} &&{}= \mathrlap{\phantom{-}15 \langle f(\omega) \, \omega_y \omega_z \rangle_\Omega} && && \\
+&c_{x^2} &&{}= -\frac{15}{2} \langle f(\omega) \rangle_\Omega &&{}+ 15 \langle f(\omega) \, \omega_x^2 \rangle_\Omega &&{}+ \frac{15}{2} \langle f(\omega) \, \omega_y^2 \rangle_\Omega \\
+&c_{y^2} &&{}= -\frac{15}{2} \langle f(\omega) \rangle_\Omega &&{}+ \frac{15}{2} \langle f(\omega) \, \omega_x^2 \rangle_\Omega &&{}+ 15 \langle f(\omega) \, \omega_y^2 \rangle_\Omega
+\end{alignedat}
+$$
+
+</div>
+
+### Orthogonal Form
+
+The Fast Reconstruction Form above has a problem. It used to be that convolutions were basically independent for each coefficient, but that's no longer true. You can also argue that the coefficients are less interpretable - before it was nice than $$c_0$$ was a simple average over the unit sphere. This could mean, for example, that if you were developing a game with options for high-quality and very low-quality global illumination using spherical harmonics, you could just use $c_0$ for the very low-quality version.
+
+Instead, we're going to change our reconstruction function to keep all the terms *orthogonal*, which practically means they won't affect each other in encoding or convolution:
+
+TODO: Orthogonal Form reconstruction function
 {: todo}
 
-As we can see, $$c_0$$ is no longer a simple average and some of the terms seem to cross over and affect each other. I'm not going to derive everything, but if we use Fast Reconstruction Form
+Note that the coefficients have different subscripts now. But the changed "features" or "columns" as we'd call them in ML and stats, creates cancellation in the derivations. So we end up with encoding rules where there's a nice reflection of the reconstruction function, looking more like projection with some constants.
 
-$$\hat{f}(\omega_x, \omega_y, \omega_z) = c_0 + c_x \omega_x + c_y \omega_y + c_z \omega_z + c_{xy} \omega_x \omega_y + c_{xz} \omega_x \omega_z + c_{yz} \omega_y \omega_z + c_{x^2} \omega_x^2 + c_{y^2} \omega_y^2$$
-
-Then we end up with these encoding rules:
-
-TODO: fill in here
-{: todo}
-
-A convolution is still a matrix multiply of the coefficients, but isotropic convolutions are no longer diagonal matrices. So maybe the next form would be more accurate to call "Fast Isotropic Convolution Form", but I'm just going to call it Fast Convolution Form.
-
-Option 2: Fast Convolution Form
-
-Instead, we're going to change our reconstruction function to keep all the terms independent:
-
-TODO: Fast Convolution Form reconstruction function
-{: todo}
-
-It may not be obvious why we've done this, until we derive the reconstruction rules:
-
-TODO: Fast Convolution Form encoding/reconstruction rules
+TODO: Orthogonal Form encoding rules
 {: todo}
 
 Now we can see that there is a comforting similarity between the encoding and reconstruction, where we are still just "projecting" the original function onto each term of the reconstruction approximation, and multipying by a constant.
