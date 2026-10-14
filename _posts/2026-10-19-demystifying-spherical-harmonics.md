@@ -464,44 +464,62 @@ Now we can see that there is a comforting similarity between the encoding and re
 
 I want to highlight how this approach differs from the typical approach to spherical harmonics, and start to introduce the real mathematical definitions.
 
-To recap here's our L1 reconstruction equation.
+To recap here's our L1 reconstruction equation:
 
-TODO: recap of our reconstruction math
-{: todo}
+$$\hat{f}(\omega_x, \omega_y, \omega_z) = c_0 + c_x \omega_x + c_y \omega_y + c_z \omega_z$$
 
-And here's our L1 encoding rules.
+And here's our L1 encoding rules:
 
-TODO: recap of our encoding math
-{: todo}
+$$
+\begin{aligned}
+c_0 &= \langle f(\omega) \rangle_\Omega \\
+c_x &= 3 \langle f(\omega) \, \omega_x \rangle_\Omega \\
+c_y &= 3 \langle f(\omega) \, \omega_y \rangle_\Omega \\
+c_z &= 3 \langle f(\omega) \, \omega_z \rangle_\Omega
+\end{aligned}
+$$
 
-By contrast, a rote implementation of SH does this reconstruction
+By contrast, a typical implementation of SH does this reconstruction:
 
-TODO: rote SH reconstruction
-{: todo}
+$$
+\begin{aligned}
+\hat{f}(\omega_x, \omega_y, \omega_z) = {} & c_{0,0} \frac{1}{2\sqrt{\pi}} \\
+& + c_{1,-1} \frac{\sqrt{3}}{2\sqrt{\pi}} \omega_y + c_{1,0} \frac{\sqrt{3}}{2\sqrt{\pi}} \omega_z + c_{1,1} \frac{\sqrt{3}}{2\sqrt{\pi}} \omega_x
+\end{aligned}
+$$
 
 With encoding as
 
-TODO: rote SH encoding
-{: todo}
+$$
+\begin{alignedat}{2}
+&c_{0,0} &&{}= \int_\Omega f(\omega) \frac{1}{2\sqrt{\pi}} \, \mathrm{d}\omega \\
+&c_{1,-1} &&{}= \int_\Omega f(\omega) \frac{\sqrt{3}}{2\sqrt{\pi}} \omega_y \, \mathrm{d}\omega \\
+&c_{1,0} &&{}= \int_\Omega f(\omega) \frac{\sqrt{3}}{2\sqrt{\pi}} \omega_z \, \mathrm{d}\omega \\
+&c_{1,1} &&{}= \int_\Omega f(\omega) \frac{\sqrt{3}}{2\sqrt{\pi}} \omega_x \, \mathrm{d}\omega
+\end{alignedat}
+$$
 
-If you plug the encoding values into the reconstruction, the terms cancel, and you end up with the same result. 
+If you plug the encoding values into the reconstruction, remembering that $$ \int_\Omega x \mathrm{d}\omega = 4 \pi \langle x \rangle_\Omega$$, the terms cancel, and you end up with the same result.
 
-Now I want to specifically highlight these sub-terms, which we'll define like this:
+Now I want to specifically highlight the shared sub-terms between encoding and reconstruction, which we'll define as functions like this:
 
-TODO: sub-term definitions, f\_()
-{: todo}
+$$
+\begin{alignedat}{2}
+&Y_{0,0}(\omega) &&{}= \frac{1}{2\sqrt{\pi}} \\
+&Y_{1,-1}(\omega) &&{}= \frac{\sqrt{3}}{2\sqrt{\pi}} \omega_y \\
+&Y_{1,0}(\omega) &&{}= \frac{\sqrt{3}}{2\sqrt{\pi}} \omega_z \\
+&Y_{1,1}(\omega) &&{}= \frac{\sqrt{3}}{2\sqrt{\pi}} \omega_x
+\end{alignedat}
+$$
 
-Coming back to the spherical harmonics vs. SH approximations, each one of these little functions is a spherical harmonic, and this is what spherical harmonics actually are: a set of (basis) functions on a sphere. An SH approximation is the linear combination of these basis functions, with encoded coefficients.
+Coming back to the spherical harmonics vs. SH approximations, each one of these $$Y$$ functions is *a spherical harmonic*, and this is what spherical harmonics actually are: a set of (basis) functions on a sphere. An SH approximation is the linear combination of these basis functions, with encoded coefficients.
 
-The usefulness of this basis function representation is that it's easier to generalize to higher degree polynomials.
+But for approximations, I personally find that the pi's, square roots, and more complicated fractions are a bit less elegant. As a programmer, if SH notations and definitions didn't already exist, and someone started with the FRF and then tried to "factor out" the common terms between encoding and reconstruction, I would say this is a situation where factoring out the common code makes it harder to read! But the basis functions are still unquestionably useful when generalizing to higher polynomials, and when doing mathematics with SH in general. And of course there is a real benefit of conforming to standard definitions and notation.
 
-TODO: introduce the gpfault article
-{: todo}
+Additionally, I can't recall if any "Introduction to SH" I've read mentions that SH is a least-squares solution, though it's mentioned and proved in [Stupid Spherical Harmonics (SH) Tricks](https://www.ppsloan.org/publications/StupidSH36.pdf) by Peter-Pike Sloan. I find that this is quite a nice way to reinvent SH from principles that more engineers already know, and it illuminates that a naive application SH is not an optimal solution in many real-world situations.
 
-[https\://gpfault.net/posts/sph.html](https://gpfault.net/posts/sph.html)
+Now, if this is your first introduction to SH, and you want to bridge the gap further and really learn all the notation, math, etc. I cannot recommend enough [Introduction to Spherical Harmonics for Graphics Programmers](https://gpfault.net/posts/sph.html) by nicebyte. This is a very very thorough read that goes through all the notation in more detail and should equip you well to understand any other SH papers.
 
-After reading that other article, I also recommend Graham Hazel's "Alternative Definition of Spherical Harmonics for Lighting". The form that Hazel uses is identical to my "fast for convolution" approach in the higher degree polynomial section, and I think it is probably the best general approach to take if you need higher than L1 spherical harmonics.
+After reading that nicebyte article, I also recommend Graham Hazel's [Alternative Definition of Spherical Harmonics for Lighting](https://grahamhazel.com/blog/2017/12/18/alternative-definition-of-spherical-harmonics-for-lighting/). Hazel also defines SH on a sphere with surface area 1, which is really the same as using the average over the sphere instead of the integral.
 
-[https\://grahamhazel.com/blog/2017/12/18/alternative-definition-of-spherical-harmonics-for-lighting/](https://grahamhazel.com/blog/2017/12/18/alternative-definition-of-spherical-harmonics-for-lighting/)
-
-AI disclaimer: all of the prose writing here is my own, not AI's, including the derivations. However the diagrams and formatting were done by AI, and I asked AI to check for mistakes.
+AI disclaimer: all of the prose writing here is my own, not AI. I did most of the derivations by hand and asked AI to convert to proper KaTeX formatting, and a few other things it filled out (like the Orthogonal Form). The interactive diagrams were all generated by AI.
