@@ -29,6 +29,7 @@ A 6-pixel (one for each face) cubemap or 8-value octahedral map works in many ca
 So instead, let's come up a simple approximation of the function. A linear model like this is just about the simplest reasonable approximation I can think of (aside from a flat constant):
 
 <div class="callout-box" markdown="1">
+<div class="callout-title">Linear (L1) Approximation Model</div>
 
 $$\hat{f}(\omega) = c_0 + c_x \omega_x + c_y \omega_y + c_z \omega_z$$
 
@@ -187,6 +188,7 @@ Now you start to get a sense for why this is called "projection". It looks like 
 Now we have our super fast and easy encoding of coefficients for our linear model:
 
 <div class="callout-box" markdown="1">
+<div class="callout-title">L1 Encoding Rules</div>
 
 $$
 \begin{aligned}
@@ -304,6 +306,7 @@ I'll add one other neat detail, which is that any linear transformation on a sph
 Now let's say we want to use second-degree polynomials (L2). We can add terms to our linear model to get this reconstruction function, which I'll call **"Fast Reconstruction Form"** or **FRF**:
 
 <div class="callout-box" markdown="1">
+<div class="callout-title">L2 Fast Reconstruction Form (FRF)</div>
 
 $$
 \begin{aligned}
@@ -401,6 +404,7 @@ $$
 The multi-axis model is a bit more complicated, but it ends up with these full encoding rules.
 
 <div class="callout-box" markdown="1">
+<div class="callout-title">L2 (FRF) Encoding Rules</div>
 
 $$
 \begin{alignedat}{4}
@@ -425,6 +429,7 @@ The Fast Reconstruction Form above has a problem. It used to be that convolution
 To address these problems, we're going to change our reconstruction function to keep all the terms *orthogonal*, which practically means they won't affect each other in encoding or convolution. This is a bit hand-wavey - it might be nice to work backwards here to derive these specific forms rather than presenting them immediately - but I wasn't sure if it would add much value to this post.
 
 <div class="callout-box" markdown="1">
+<div class="callout-title">L2 Orthogonal Form Model</div>
 
 $$
 \begin{aligned}
@@ -440,6 +445,7 @@ $$
 Note that the coefficients have different subscripts now and the terms have been rearranged a bit, this is to be more consistent with typical spherical harmonic definitions. The important thing is that the changed "features" or "columns" (as we'd call them in ML or stats) create cancellation in the encoding derivations. So we end up with encoding rules where there's a nice reflection of the reconstruction function, looking more like projection with some constants.
 
 <div class="callout-box" markdown="1">
+<div class="callout-title">L2 Orthogonal Encoding Rules</div>
 
 $$
 \begin{alignedat}{3}
