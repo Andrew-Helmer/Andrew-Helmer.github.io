@@ -112,7 +112,7 @@ $$\frac{\partial \langle (\hat{f}(\omega) - f(\omega))^2 \rangle_\Omega}{\partia
 
 The derivative of an average is the average of the derivative:
 
-$$\left\langle \frac{\partial (\hat{f}(\omega) - f(\omega)^2)}{\partial c_0} \right\rangle_\Omega = 0$$
+$$\left\langle \frac{\partial ((\hat{f}(\omega) - f(\omega))^2)}{\partial c_0} \right\rangle_\Omega = 0$$
 
 Typical power and chain rule:
 
@@ -132,7 +132,7 @@ Divide by 2, and separate all the average terms, like this:
 
 $$\langle c_0 \rangle_\Omega + \langle c_x \omega_x \rangle_\Omega + \langle c_y \omega_y \rangle_\Omega + \langle c_z \omega_z \rangle_\Omega = \langle f(\omega) \rangle_\Omega$$
 
-Now the average $$\langle c_0 \rangle_\Omega$$ is of course $$c_0$$, it's a constant. $$\langle c_x \omega_x \rangle_\Omega$$ is 0, because it's symetrically distributed over a sphere (for every $$\omega_x$$ value, there is also a $$-\omega_x$$ value), and same for the other two terms. So we get this wonderfully intuitive and easy to calculate value.
+Now the average $$\langle c_0 \rangle_\Omega$$ is of course $$c_0$$, it's a constant. $$\langle c_x \omega_x \rangle_\Omega$$ is 0, because it's symmetrically distributed over a sphere (for every $$\omega_x$$ value, there is also a $$-\omega_x$$ value), and same for the other two terms. So we get this wonderfully intuitive and easy to calculate value.
 
 $$c_0 = \langle f(\omega) \rangle_\Omega$$
 
@@ -142,7 +142,7 @@ Now let's do the same for $$c_x$$...
 
 $$\underset{c_x}{\operatorname{argmin}} \langle (\hat{f}(\omega) - f(\omega))^2 \rangle_\Omega$$
 
-like the previous derivation, we would first take the derivative and set it zero. Like before, we start with the chain rule and power rule and move the average outside the derivative.
+like the previous derivation, we would first take the derivative and set it to zero. Like before, we start with the chain rule and power rule and move the average outside the derivative.
 
 $$2 \left\langle (\hat{f}(\omega) - f(\omega)) \frac{\partial(\hat{f}(\omega) - f(\omega))}{\partial c_x} \right\rangle_\Omega = 0$$
 
@@ -176,7 +176,7 @@ So we can also say
 
 $$\langle \omega_x^2 \rangle_\Omega + \langle \omega_y^2 \rangle_\Omega + \langle \omega_z^2 \rangle_\Omega = 1$$
 
-Since a sphere is symetrical for all the three axes, the averages are all the same: $$\langle \omega_x^2 \rangle_\Omega = \langle \omega_y^2 \rangle_\Omega = \langle \omega_z^2 \rangle_\Omega$$, and we can substitute that in, so $$3 \langle \omega_x^2 \rangle_\Omega = 1$$. That gives us:
+Since a sphere is symmetrical for all the three axes, the averages are all the same: $$\langle \omega_x^2 \rangle_\Omega = \langle \omega_y^2 \rangle_\Omega = \langle \omega_z^2 \rangle_\Omega$$, and we can substitute that in, so $$3 \langle \omega_x^2 \rangle_\Omega = 1$$. That gives us:
 
 $$c_x = 3 \langle f(\omega) \, \omega_x \rangle_\Omega$$
 
@@ -251,11 +251,11 @@ In practice, these may or may not be significant problems in your application, b
 
 ## Convolution
 
-Let's say we have an L1 spherical harmonic approximation, encoded with our 4 coefficients $$c_0, c_x, c_y, c_z$$. Then we have a spherical convolution $$g(x)$$, which could do something like "blur" or "sharpen" the approximation. 
+Let's say we have an L1 spherical harmonic approximation, encoded with our 4 coefficients $$c_0, c_x, c_y, c_z$$. Then we have a spherical convolution $$g(f)$$, which could do something like "blur" or "sharpen" the approximation. 
 
-I'll spoil the surprise before doing the derivation this time. It turns out that for a given convolution $$g(x)$$, we can simply precompute 4 coefficients, and the convolution is as simple as multiplying each of the 4 coefficients. For example, to "convolve" from incoming radiance for every direction to outgoing irradiance for every surface normal, you just multiply the $$c_x, c_y, c_z$$ components by $$2/3$$. That's it\!
+I'll spoil the surprise before doing the derivation this time. It turns out that for a given convolution $$g(f)$$, we can simply precompute 2 coefficient factors, one for $$c_0$$ and another that multiplies $$c_x, c_y, c_z$$. For example, let's say we have a Lambertian (diffuse) BRDF. For a given surface normal $$\omega$$, to "convolve" from incoming radiance for every direction to the reflected radiance (which is uniform across all reflection directions), you just multiply the $$c_x, c_y, c_z$$ components by $$2/3$$! This is taking into account the typical $$\frac{1}{\pi}$$ BRDF constant.
 
-Now we'll derive this. Let's say that a convolution takes in a spherical function or data, a direction, and outputs a value that is a weighted integral of the original spherical spherical data.
+Now we'll derive this. Let's say that a convolution takes in a spherical function or data, a direction, and outputs a value that is a weighted integral of the original spherical data.
 
 $$g(f, \omega') = \int_\Omega h(\omega' \cdot \omega) \, f(\omega) \, \mathrm{d}\omega$$
 
@@ -294,7 +294,7 @@ This might seem a bit mathy, but I think in plain English it's intuitive. $$c_0$
 
 We can do basically the same rearrangements for the other coefficients, and in the end, we get very simple scale factors. 
 
-In other words, given any convolution $$g(f)$$, we can precalculate four $$k$$ values, let’s say $$k_0, k_x, k_y, k_z$$. Then the convolved approximation $$g(\hat{f})(\omega)$$ and the approximation of the convolution $$\widehat{g(f)}(\omega)$$ are both just $$c_0 k_0 + c_x k_x \omega_x + c_y k_y \omega_y + c_z k_z \omega_z$$.
+In other words, given any convolution $$g(f)$$, we can precalculate two $$k$$ values, let’s say $$k_0, k_{xyz}$$. Then the convolved approximation $$g(\hat{f})(\omega)$$ and the approximation of the convolution $$\widehat{g(f)}(\omega)$$ are both just $$c_0 k_0 + c_x k_{xyz} \omega_x + c_y k_{xyz} \omega_y + c_z k_{xyz} \omega_z$$.
 
 Again, all of this is under the assumption that our integrals are uniformly oriented around a sphere. But if we're working on, say, hemispheres or arbitrary surfaces, things can get more complicated.
 
@@ -340,7 +340,7 @@ Again we start with taking the partial derivative and setting it equal to zero.
 
 $$\frac{\partial \langle (\hat{f}(\omega) - f(\omega))^2 \rangle_\Omega}{\partial c_0} = 0$$
 
-I'll skip a few of the simple steps from before, application of the chain and power rules, dividing by two, and that $$\frac{\partial \hat{f}(\omega) - f(\omega)}{\partial c_0}$$ simplifies
+I'll skip a few of the simple steps from before, application of the chain and power rules, dividing by two, and that $$\frac{\partial (\hat{f}(\omega) - f(\omega))}{\partial c_0}$$ simplifies
 to $$1$$, and we get
 
 $$ \langle c_0 + c_x \omega_x + c_{x^2} \omega_x^2 - f(\omega) \rangle_\Omega = 0 $$
@@ -359,13 +359,13 @@ Finally we have $$ c_{x^2} $$.
 
 The first few steps work out again like this:
 
-$$ \langle c_0 + c_x \omega_x + c_{x^2} \omega_x^2 - f(\omega) \rangle_\Omega \omega_x^2 = 0 $$
+$$ \langle (c_0 + c_x \omega_x + c_{x^2} \omega_x^2 - f(\omega)) \, \omega_x^2 \rangle_\Omega = 0 $$
 
-Before we showed that $$\langle \omega_x^2 \rangle_\Omega = \frac{1}{3}$$. And we know that $$ \langle \omega_x^3 \rangle_Omega = 0$$. I won't derive this here, but $$ \langle \omega_x^4 \rangle_Omega = \frac{1}{5}$$. 
+Before we showed that $$\langle \omega_x^2 \rangle_\Omega = \frac{1}{3}$$. And we know that $$ \langle \omega_x^3 \rangle_\Omega = 0$$. I won't derive this here, but $$ \langle \omega_x^4 \rangle_\Omega = \frac{1}{5}$$. 
 
 So this gives us
 
-$$ c_{x^2} = \langle 5 f(\omega) \omega^2 \rangle_Omega - \frac{5 c_0}{3} $$
+$$ c_{x^2} = 5 \langle f(\omega) \, \omega_x^2 \rangle_\Omega - \frac{5 c_0}{3} $$
 
 Now we have a linear system (two variables $$c_0$$ and $$c_{x^2}$$, two equations). Most general way to solve this is to reformulate it with a matrix form:
 
@@ -385,7 +385,7 @@ c_{x^2}
 \end{bmatrix}
 $$
 
-And this can be solved with Gaussian elimination, or inverting the matrix and multiplying by the left-hand side of each.
+And this can be solved with Gaussian elimination, or inverting the matrix and multiplying on the left for both sides of the equation.
 
 Finally for our one-axis model, we get this:
 
@@ -421,7 +421,7 @@ $$
 
 ### Orthogonal Form
 
-The Fast Reconstruction Form above has a problem. It used to be that convolutions were basically independent for each coefficient, but that's no longer true. You can also argue that the coefficients are less interpretable - before it was nice than $$c_0$$ was a simple average over the unit sphere. This could mean, for example, that if you were developing a game with options for high-quality and very low-quality global illumination using spherical harmonics, you could just use $c_0$ for the very low-quality version.
+The Fast Reconstruction Form above has a problem. It used to be that convolutions were basically independent for each coefficient, but that's no longer true. You can also argue that the coefficients are less interpretable - before it was nice that $$c_0$$ was a simple average over the unit sphere. This could mean, for example, that if you were developing a game with options for high-quality and very low-quality global illumination using spherical harmonics, you could just use $$c_0$$ for the very low-quality version.
 
 Instead, we're going to change our reconstruction function to keep all the terms *orthogonal*, which practically means they won't affect each other in encoding or convolution:
 
@@ -458,7 +458,7 @@ $$
 
 </div>
 
-Now we can see that there is a comforting similarity between the encoding and reconstruction, where we are still just "projecting" the original function onto each term of the reconstruction approximation, and multipying by a constant.
+Now we can see that there is a comforting similarity between the encoding and reconstruction, where we are still just "projecting" the original function onto each term of the reconstruction approximation, and multiplying by a constant.
 
 ## Bridging the Gap
 
@@ -499,7 +499,7 @@ $$
 \end{alignedat}
 $$
 
-If you plug the encoding values into the reconstruction, remembering that $$ \int_\Omega x \mathrm{d}\omega = 4 \pi \langle x \rangle_\Omega$$, the terms cancel, and you end up with the same result.
+If you plug the encoding values into the reconstruction, remembering that $$ \int_\Omega f(\omega) \mathrm{d}\omega = 4 \pi \langle f(\omega) \rangle_\Omega$$, the terms cancel, and you end up with the same result.
 
 Now I want to specifically highlight the shared sub-terms between encoding and reconstruction, which we'll define as functions like this:
 
@@ -516,7 +516,7 @@ Coming back to the spherical harmonics vs. SH approximations, each one of these 
 
 But for approximations, I personally find that the pi's, square roots, and more complicated fractions are a bit less elegant. As a programmer, if SH notations and definitions didn't already exist, and someone started with the FRF and then tried to "factor out" the common terms between encoding and reconstruction, I would say this is a situation where factoring out the common code makes it harder to read! But the basis functions are still unquestionably useful when generalizing to higher polynomials, and when doing mathematics with SH in general. And of course there is a real benefit of conforming to standard definitions and notation.
 
-Additionally, I can't recall if any "Introduction to SH" I've read mentions that SH is a least-squares solution, though it's mentioned and proved in [Stupid Spherical Harmonics (SH) Tricks](https://www.ppsloan.org/publications/StupidSH36.pdf) by Peter-Pike Sloan. I find that this is quite a nice way to reinvent SH from principles that more engineers already know, and it illuminates that a naive application SH is not an optimal solution in many real-world situations.
+Additionally, I can't recall if any "Introduction to SH" I've read mentions that SH is a least-squares solution, though it's mentioned and proved in [Stupid Spherical Harmonics (SH) Tricks](https://www.ppsloan.org/publications/StupidSH36.pdf) by Peter-Pike Sloan. I find that this is quite a nice way to reinvent SH from principles that more engineers already know, and it illuminates that a naive application of SH is not an optimal solution in many real-world situations.
 
 Now, if this is your first introduction to SH, and you want to bridge the gap further and really learn all the notation, math, etc. I cannot recommend enough [Introduction to Spherical Harmonics for Graphics Programmers](https://gpfault.net/posts/sph.html) by nicebyte. This is a very very thorough read that goes through all the notation in more detail and should equip you well to understand any other SH papers.
 
