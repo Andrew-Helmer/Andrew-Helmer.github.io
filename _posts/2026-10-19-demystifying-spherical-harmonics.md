@@ -259,8 +259,7 @@ Now we'll derive this. Let's say that a convolution takes in a spherical functio
 
 $$g(f, \omega') = \int_\Omega h(\omega' \cdot \omega) \, f(\omega) \, \mathrm{d}\omega$$
 
-TODO: need to find the right definition of a convolution that is "constant" over the sphere. Something about the weighting function?
-{: todo}
+Note that the convolution kernel $$h$$ doesn't depend on two arbitrary directions, only the dot product (i.e. angle) between them. This means the convolution is symmetric around the direction $$\omega'$$, and the same everywhere around the sphere.
 
 Now we can also express our encoding as an integral, for example
 
