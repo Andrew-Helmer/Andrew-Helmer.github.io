@@ -7,9 +7,9 @@ latex: true
 
 {:todo: style="color: red"}
 
-Ever since I first heard of spherical harmonics as an approximation in computer graphics, I think when I was starting my career in 2011 or 2012, I have felt that the way they are explained is too complicated. Sometimes they assume a prerequisite amount of math knowledge that isn't really necessary, and tend to be very abstract. Other times they show something very complex and through a lot of effort end up simplifying them to something usable. In addition to making it harder to learn, I think those approaches to SH can lead to misapplication. There's a lot of discussion about certain SH artifacts, but there is a class of problems with SH that are often ignored, which we'll talk about in [Questioning Our Assumptions](#questioning-our-assumptions).
+Ever since I first heard of spherical harmonics as an approximation in computer graphics, I have felt that the way they are explained is too complicated. Sometimes they assume a prerequisite amount of math knowledge that isn't really necessary, and they tend to be very abstract. Other times they show something very complex and through a lot of effort end up simplifying them to something usable. In addition to making it harder to learn, I think those approaches to SH can lead to misapplication. There's a lot of discussion about certain SH artifacts, but there is a class of problems with SH that are often ignored, which we'll talk about in [Questioning Our Assumptions](#questioning-our-assumptions).
 
-In this post, what we're going to do is start with a common problem in graphics, solve it as simply as we can, and end up with something that is actually equivalent to SH approximations. I hope that this is more straightforward and intuitive for some people. This is aimed towards people who want to learn to use SH in graphics, but even if you already know how to use SH in graphics, I hope that this perspective is useful.
+In this post, what we're going to do is start with a common problem in graphics, solve it as simply as we can using tools that I think many engineers are familiar with, and end up getting something that is actually equivalent to SH approximations. This is aimed towards people who want to learn to use SH in graphics, but even if you already know how to use SH in graphics, I hope that this perspective is useful.
 
 ## Spherical Data
 
@@ -422,7 +422,7 @@ $$
 
 The Fast Reconstruction Form above has a problem. It used to be that convolutions were basically independent for each coefficient, but that's no longer true. You can also argue that the coefficients are less interpretable - before it was nice that $$c_0$$ was a simple average over the unit sphere. This could mean, for example, that if you were developing a game with options for high-quality and very low-quality global illumination using spherical harmonics, you could just use $$c_0$$ for the very low-quality version.
 
-Instead, we're going to change our reconstruction function to keep all the terms *orthogonal*, which practically means they won't affect each other in encoding or convolution:
+To address these problems, we're going to change our reconstruction function to keep all the terms *orthogonal*, which practically means they won't affect each other in encoding or convolution. This is a bit hand-wavey - it might be nice to work backwards here to derive these specific forms rather than presenting them immediately - but I wasn't sure if it would add much value to this post.
 
 <div class="callout-box" markdown="1">
 
