@@ -116,6 +116,7 @@ strong, b {
 
 img {
   max-width: 100%;
+  height: auto;
 }
 
 // Fixes images in popup boxes from Google Translate
@@ -307,16 +308,44 @@ footer {
 .callout-box {
   width: fit-content;
   max-width: 100%;
-  margin: 20px auto;
+  margin: 25px auto;
   border: 1px solid $border;
   background-color: $codeBg;
   border-radius: 6px;
-  padding: 12px 24px;
+  overflow: hidden;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  box-sizing: border-box;
+
+  .callout-title {
+    background-color: #181818;
+    border-bottom: 1px solid $border;
+    padding: 9px 20px;
+    font-size: 14.5px;
+    font-family: $helveticaNeue;
+    font-weight: 600;
+    color: #a4a4a4;
+    text-align: center;
+    letter-spacing: 0.3px;
+    box-sizing: border-box;
+
+    @include mobile {
+      font-size: 13px;
+      padding: 8px 14px;
+    }
+  }
+
+  p {
+    margin: 0;
+  }
 
   .katex-display {
     margin: 0;
+    padding: 14px 24px;
+    overflow-x: auto;
+    overflow-y: hidden;
   }
 }
+
 
 // Settled on moving the import of syntax highlighting to the bottom of the CSS
 // ... Otherwise it really bloats up the top of the CSS file and makes it difficult to find the start

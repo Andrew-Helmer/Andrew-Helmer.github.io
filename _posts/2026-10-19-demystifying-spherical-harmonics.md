@@ -1,13 +1,17 @@
 ---
 layout: post
+image: /images/spherical-harmonics-header.svg
+meta_image: /images/spherical-harmonics-header-meta.jpg
 title: "Demystifying Spherical Harmonics: An Optimization Approach"
 date: 2026-10-19
 latex: true
 ---
 
-{:todo: style="color: red"}
-
 Ever since I first heard of spherical harmonics as an approximation in computer graphics, I have felt that the way they are explained is too complicated. Sometimes they assume a prerequisite amount of math knowledge that isn't really necessary, and they tend to be very abstract. Other times they show something very complex and through a lot of effort end up simplifying them to something usable. In addition to making it harder to learn, I think those approaches to SH can lead to misapplication. There's a lot of discussion about certain SH artifacts, but there is a class of problems with SH that are often ignored, which we'll talk about in [Questioning Our Assumptions](#questioning-our-assumptions).
+
+<!--more-->
+
+{:todo: style="color: red"}
 
 In this post, what we're going to do is start with a common problem in graphics, solve it as simply as we can using tools that I think many engineers are familiar with, and end up getting something that is actually equivalent to SH approximations. This is aimed towards people who want to learn to use SH in graphics, but even if you already know how to use SH in graphics, I hope that this perspective is useful.
 
@@ -249,7 +253,7 @@ Finally, many people make the mistake of using standard or naive SH projection w
 TODO: diagram showing bias of hemispherical lighting
 {: todo}
 
-In practice, these may or may not be significant problems in your application, but I have seen improvements to visual quality by addressing them.
+In practice, these may or may not be important problems in your application, but I have seen significant improvements to visual quality by addressing them.
 
 ## Convolution
 
@@ -399,6 +403,8 @@ $$
 \end{alignedat}
 $$
 
+This doesn't really help us with the multi-axis derivation directly, but it shows why this gets a bit more complicated. The different coefficients and "projections" now have interdependencies.
+
 #### L2 (FRF) Encoding Rules
 
 The multi-axis model is a bit more complicated, but it ends up with these full encoding rules.
@@ -442,7 +448,7 @@ $$
 
 </div>
 
-Note that the coefficients have different subscripts now and the terms have been rearranged a bit, this is to be more consistent with typical spherical harmonic definitions. The important thing is that the changed "features" or "columns" (as we'd call them in ML or stats) create cancellation in the encoding derivations. So we end up with encoding rules where there's a nice reflection of the reconstruction function, looking more like projection with some constants.
+Note that the coefficients have different subscripts now and the terms have been rearranged a bit, this is to be more consistent with typical spherical harmonic definitions. The important thing is that the changed "features" or "columns" (as we'd call them in ML or stats) create cancellation in the encoding derivations. So we end up with encoding rules:
 
 <div class="callout-box" markdown="1">
 <div class="callout-title">L2 Orthogonal Encoding Rules</div>
@@ -519,7 +525,7 @@ $$
 
 Coming back to the spherical harmonics vs. SH approximations, each one of these $$Y$$ functions is *a spherical harmonic*, and this is what spherical harmonics actually are: a set of (basis) functions on a sphere. An SH approximation is the linear combination of these basis functions, with encoded coefficients.
 
-But for approximations, I personally find that the pi's, square roots, and more complicated fractions are a bit less elegant. As a programmer, if SH notations and definitions didn't already exist, and someone started with the FRF and then tried to "factor out" the common terms between encoding and reconstruction, I would say this is a situation where factoring out the common code makes it harder to read! But the basis functions are still unquestionably useful when generalizing to higher polynomials, and when doing mathematics with SH in general. And of course there is a real benefit of conforming to standard definitions and notation.
+The basis functions are unquestionably useful when generalizing to higher polynomials, and when doing mathematics with SH in general. And of course there is a real benefit of conforming to standard definitions and notation. But for approximations, I personally find that the pi's, square roots, and more complicated fractions are a bit less elegant. As a programmer, if SH notations and definitions didn't already exist, and someone started with the L1 FRF and then tried to "factor out" the common terms between encoding and reconstruction, I would say this is a situation where factoring out the common code makes it harder to read!
 
 Additionally, I can't recall if any "Introduction to SH" I've read mentions that SH is a least-squares solution, though it's mentioned and proved in [Stupid Spherical Harmonics (SH) Tricks](https://www.ppsloan.org/publications/StupidSH36.pdf) by Peter-Pike Sloan. I find that this is quite a nice way to reinvent SH from principles that more engineers already know, and it illuminates that a naive application of SH is not an optimal solution in many real-world situations.
 
