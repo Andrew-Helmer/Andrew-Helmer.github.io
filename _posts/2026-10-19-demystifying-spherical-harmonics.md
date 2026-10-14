@@ -425,13 +425,38 @@ The Fast Reconstruction Form above has a problem. It used to be that convolution
 
 Instead, we're going to change our reconstruction function to keep all the terms *orthogonal*, which practically means they won't affect each other in encoding or convolution:
 
-TODO: Orthogonal Form reconstruction function
-{: todo}
+<div class="callout-box" markdown="1">
 
-Note that the coefficients have different subscripts now. But the changed "features" or "columns" as we'd call them in ML and stats, creates cancellation in the derivations. So we end up with encoding rules where there's a nice reflection of the reconstruction function, looking more like projection with some constants.
+$$
+\begin{aligned}
+\hat{f}(\omega_x, \omega_y, \omega_z) = {} & c_{0,0} \\
+& + c_{1,-1} \omega_y + c_{1,0} \omega_z + c_{1,1} \omega_x \\
+& + c_{2,-2} \omega_x \omega_y + c_{2,-1} \omega_y \omega_z + c_{2,0} (3 \omega_z^2 - 1) \\
+& + c_{2,1} \omega_x \omega_z + c_{2,2} (\omega_x^2 - \omega_y^2)
+\end{aligned}
+$$
 
-TODO: Orthogonal Form encoding rules
-{: todo}
+</div>
+
+Note that the coefficients have different subscripts now and the terms have been rearranged a bit, this is to be more consistent with typical spherical harmonic definitions. The important thing is the changed "features" or "columns" as we'd call them in ML and stats, creates cancellation in the derivations. So we end up with encoding rules where there's a nice reflection of the reconstruction function, looking more like projection with some constants.
+
+<div class="callout-box" markdown="1">
+
+$$
+\begin{alignedat}{3}
+&c_{0,0} &&{}={} & &\langle f(\omega) \rangle_\Omega \\
+&c_{1,-1} &&{}={} & \kern 0.37em 3 \kern 0.37em &\langle f(\omega) \, \omega_y \rangle_\Omega \\
+&c_{1,0} &&{}={} & \kern 0.37em 3 \kern 0.37em &\langle f(\omega) \, \omega_z \rangle_\Omega \\
+&c_{1,1} &&{}={} & \kern 0.37em 3 \kern 0.37em &\langle f(\omega) \, \omega_x \rangle_\Omega \\
+&c_{2,-2} &&{}={} & \kern 0.12em 15 \kern 0.12em &\langle f(\omega) \, \omega_x \omega_y \rangle_\Omega \\
+&c_{2,-1} &&{}={} & \kern 0.12em 15 \kern 0.12em &\langle f(\omega) \, \omega_y \omega_z \rangle_\Omega \\
+&c_{2,0} &&{}={} & \kern 0.25em \frac{5}{4} \kern 0.25em &\langle f(\omega) \, (3 \omega_z^2 - 1) \rangle_\Omega \\
+&c_{2,1} &&{}={} & \kern 0.12em 15 \kern 0.12em &\langle f(\omega) \, \omega_x \omega_z \rangle_\Omega \\
+&c_{2,2} &&{}={} & \frac{15}{4} &\langle f(\omega) \, (\omega_x^2 - \omega_y^2) \rangle_\Omega
+\end{alignedat}
+$$
+
+</div>
 
 Now we can see that there is a comforting similarity between the encoding and reconstruction, where we are still just "projecting" the original function onto each term of the reconstruction approximation, and multipying by a constant.
 
@@ -439,17 +464,17 @@ Now we can see that there is a comforting similarity between the encoding and re
 
 I want to highlight how this approach differs from the typical approach to spherical harmonics, and start to introduce the real mathematical definitions.
 
-To recap here's our reconstruction math
+To recap here's our L1 reconstruction equation.
 
 TODO: recap of our reconstruction math
 {: todo}
 
-And here's our encoding math
+And here's our L1 encoding rules.
 
 TODO: recap of our encoding math
 {: todo}
 
-By contrast, a rote implementation of SH does
+By contrast, a rote implementation of SH does this reconstruction
 
 TODO: rote SH reconstruction
 {: todo}
@@ -479,4 +504,4 @@ After reading that other article, I also recommend Graham Hazel's "Alternative D
 
 [https\://grahamhazel.com/blog/2017/12/18/alternative-definition-of-spherical-harmonics-for-lighting/](https://grahamhazel.com/blog/2017/12/18/alternative-definition-of-spherical-harmonics-for-lighting/)
 
-AI disclaimer: all of the writing here is my own, not AI's, including the derivations. However the diagrams and formatting were done by AI, and I asked AI to check for mistakes.
+AI disclaimer: all of the prose writing here is my own, not AI's, including the derivations. However the diagrams and formatting were done by AI, and I asked AI to check for mistakes.
