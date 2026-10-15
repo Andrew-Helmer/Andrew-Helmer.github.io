@@ -1,7 +1,7 @@
 ---
 layout: post
-image: /images/spherical-harmonics-header.svg
-meta_image: /images/spherical-harmonics-header-meta.jpg
+image: /post_assets/2026-10-19-demystifying-spherical-harmonics/spherical-harmonics-header.svg
+meta_image: /post_assets/2026-10-19-demystifying-spherical-harmonics/spherical-harmonics-header-meta.jpg
 title: "Demystifying Spherical Harmonics: An Optimization Approach"
 date: 2026-10-19
 latex: true
@@ -13,7 +13,7 @@ Ever since I first heard of spherical harmonics as an approximation in computer 
 
 {:todo: style="color: red"}
 
-In this post, what we're going to do is start with a common problem in graphics, solve it as simply as we can using tools that I think many engineers are familiar with, and end up getting something that is actually equivalent to SH approximations. This is aimed towards people who want to learn to use SH in graphics, but even if you already know how to use SH in graphics, I hope that this perspective is useful.
+In this post, what we're going to do is start with a common problem in graphics, solve it as simply as we can using tools that I think many engineers are familiar with, and end up getting something that is actually equivalent to SH approximations. This is aimed towards people who want to learn to use SH in graphics, but even if you already know how to use SH in graphics, I hope that this perspective is still useful.
 
 ## Spherical Data
 
@@ -21,8 +21,8 @@ So let's start with the engineering problem. We have a whole bunch of values tha
 
 This visualization is a simple example of what this function might look like. You can see the spherical directions from the surface normal, or view the incoming light via a reflection (bounced rays) in a chrome ball.
 
-<div id="sh-diagram-reflective-sphere" class="sh-diagram"></div>
-<script defer src="{{ site.baseurl }}/assets/sh-diagrams.js"></script>
+<div id="sh-diagram-reflective-sphere" class="diagram"></div>
+<script defer src="{{ site.baseurl }}/post_assets/2026-10-19-demystifying-spherical-harmonics/sh-diagrams.js"></script>
 
 For a given direction, calculating the value is expensive. It could mean ray-tracing, path-tracing, or rasterizing a pixel. In something like a game, you typically don't want to do this with every point that you want to shade. Alternatively, you can pre-render a high resolution version of the spherical function, possibly storing in a cubemap or octahedral map. But this requires a lot of memory for many points in space.
 
@@ -43,7 +43,7 @@ Where we will precalculate and store our four coefficients: $$c_0, c_x, c_y, c_z
 
 It might be obvious that you can think of the $$c_0$$ term as an overall intensity, and the $$c_x, c_y, c_z$$ as a directional intensity, for a particular direction. And if the length of the $$<c_x, c_y, c_z>$$ vector is larger than $$c_0$$, you can get negative values (as shown in red here).
 
-<div id="sh-diagram-linear-approx" class="sh-diagram"></div>
+<div id="sh-diagram-linear-approx" class="diagram"></div>
 
 So how do we get these four coefficients? A quick idea might be to use the coefficients that minimize the (sum/average/integrated) square error against the original function or a high-resolution version. In other words, a good old fashioned linear regression. In this code we'll sample some random directions and regress on those.
 
@@ -65,7 +65,7 @@ def encode_linear_coefficients(spherical_fn, num_dirs=8192, seed=None):
 
 These coefficients gives us a pretty simple spherical approximation.
 
-<div id="sh-diagram-pantheon-fit" class="sh-diagram"></div>
+<div id="sh-diagram-pantheon-fit" class="diagram"></div>
 
 Well, we pretty much just reinvented spherical harmonic approximations\! This is most likely something countless people have done without even realizing that what they did was equivalent to using SH.
 
@@ -125,7 +125,7 @@ $$\left\langle 2 (\hat{f}(\omega) - f(\omega)) \frac{\partial(\hat{f}(\omega) - 
 
 Now let's focus on $$\frac{\partial(\hat{f}(\omega) - f(\omega))}{\partial c_0}$$
 
-$$\frac{\partial f(\omega)}{\partial c_0}$$ is zero, because $$c_0$$ is unrelated to the original term.
+$$\frac{\partial f(\omega)}{\partial c_0}$$ is zero, because $$c_0$$ is unrelated to the original function.
 
 $$\frac{\partial(c_0 + c_x \omega_x + c_y \omega_y + c_z \omega_z)}{\partial c_0}$$ is simply $$1$$.
 
@@ -244,13 +244,13 @@ And in this case, "projection" is no longer the optimal least squares solution, 
 
 For example, SH approximations are often used to represent reflected/outgoing radiance from a Lambertian/diffuse BRDF. In this case, the direction used is a surface normal (because for a given normal, light is equally reflected in all visible directions with this BRDF). If our lighting is a simple directional light, we can *perfectly* represent the Lambertian reflected light using the clamped function, with zero error. But naive SH projection is overly soft, because it's minimizing error for the wrong reconstruction function.
 
-<div id="sh-diagram-clamped-directional" class="sh-diagram"></div>
+<div id="sh-diagram-clamped-directional" class="diagram"></div>
 
 It's also generally the case that least squares error is rarely ideal for graphics applications. A relative error is usually better, and there are even better perceptual error metrics depending on what you know about your scene.
 
 Finally, many people make the mistake of using standard or naive SH projection when your incoming light distribution is actually a *hemisphere*, for example when generating directional lightmaps. This can actually lead to meaningful bias, ending up too bright even for a completely flat surface where we should be matching non-directional lightmaps.
 
-<div id="sh-diagram-hemisphere-bias" class="sh-diagram"></div>
+<div id="sh-diagram-hemisphere-bias" class="diagram"></div>
 
 In practice, these may or may not be important problems in your application, but I have seen significant improvements to visual quality by addressing them.
 
