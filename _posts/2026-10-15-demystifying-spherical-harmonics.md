@@ -1,7 +1,7 @@
 ---
 layout: post
-image: /post_assets/2026-10-19-demystifying-spherical-harmonics/spherical-harmonics-header.svg
-meta_image: /post_assets/2026-10-19-demystifying-spherical-harmonics/spherical-harmonics-header-meta.jpg
+image: /post_assets/2026-10-15-demystifying-spherical-harmonics/spherical-harmonics-header.svg
+meta_image: /post_assets/2026-10-15-demystifying-spherical-harmonics/spherical-harmonics-header-meta.jpg
 title: "Demystifying Spherical Harmonics: An Optimization Approach"
 date: 2026-10-15
 latex: true
@@ -13,7 +13,7 @@ Ever since I first heard of spherical harmonics as an approximation in computer 
 
 {:todo: style="color: red"}
 
-In this post, what we're going to do is start with a common problem in graphics, solve it as simply as we can using tools that I think many programmers are familiar with, and end up getting something that is equivalent to SH approximations. This is aimed towards people who want to learn to use SH in graphics, but even if you already know how to use SH in graphics, I hope that this approach to SH is still useful think about.
+In this post, what we're going to do is start with a common problem in graphics, solve it as simply as we can using tools that I think many programmers are familiar with, and end up getting something that is equivalent to SH approximations. This is aimed towards people who want to learn to use SH in graphics, but even if you already know how to use SH in graphics, I hope that this approach to SH is still useful to think about.
 
 ## Spherical Data
 
@@ -22,7 +22,7 @@ So let's start with the engineering problem. We have a whole bunch of values tha
 This visualization is a simple example of what this function might look like. You can see the spherical directions from the surface normal, or view the incoming light via a reflection (bounced rays) in a chrome ball.
 
 <div id="sh-diagram-reflective-sphere" class="diagram"></div>
-<script defer src="{{ site.baseurl }}/post_assets/2026-10-19-demystifying-spherical-harmonics/sh-diagrams.js"></script>
+<script defer src="{{ site.baseurl }}/post_assets/2026-10-15-demystifying-spherical-harmonics/sh-diagrams.js"></script>
 
 For a given direction, calculating the value is expensive. It could mean ray-tracing, path-tracing, or rasterizing a pixel. In something like a game, you typically don't want to fully calculate a reflection value for every point that you want to shade. Alternatively, you can pre-render a high resolution version of the spherical function, possibly storing in a cubemap or an octahedral map. But this requires a lot of memory for many points in space.
 

@@ -2,7 +2,7 @@
   "use strict";
 
   const HDR_WEBP_URL =
-    "/post_assets/2026-10-19-demystifying-spherical-harmonics/pantheon-hdr.webp";
+    "/post_assets/2026-10-15-demystifying-spherical-harmonics/pantheon-hdr.webp";
   const LOG_EPS = 0.002;
   const LOG_MAX_LUM = 12.15625;
   let hdrPromise = null;
