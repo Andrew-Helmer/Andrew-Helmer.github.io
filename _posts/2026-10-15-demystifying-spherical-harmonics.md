@@ -3,7 +3,7 @@ layout: post
 image: /post_assets/2026-10-19-demystifying-spherical-harmonics/spherical-harmonics-header.svg
 meta_image: /post_assets/2026-10-19-demystifying-spherical-harmonics/spherical-harmonics-header-meta.jpg
 title: "Demystifying Spherical Harmonics: An Optimization Approach"
-date: 2026-10-19
+date: 2026-10-15
 latex: true
 ---
 
