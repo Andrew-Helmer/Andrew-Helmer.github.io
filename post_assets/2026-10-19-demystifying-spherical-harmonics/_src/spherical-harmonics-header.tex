@@ -1,0 +1,50 @@
+\ifnum\pdfoutput=0
+  \def\pgfsysdriver{pgfsys-dvisvgm.def}
+\fi
+\documentclass[tikz,border=0pt]{standalone}
+\usepackage{tikz}
+\usepackage{amsmath}
+\usepackage{mathtools}
+\usepackage{graphicx}
+
+% Colors matching blog _variables.scss and diagram palette
+\definecolor{bg}{HTML}{1E1E1E}
+\definecolor{textlight}{HTML}{ECECEC}
+\definecolor{errred}{HTML}{E84435}
+\definecolor{marker0}{HTML}{010101}
+\definecolor{marker1}{HTML}{020202}
+\definecolor{marker2}{HTML}{030303}
+
+\begin{document}
+\begin{tikzpicture}[
+    scale=1.65,
+    font=\large
+]
+    % Bounding box around the three-sphere triptych
+    \path[use as bounding box] (-3.35,-1.56) rectangle (3.35,1.46);
+    \fill[bg] (-3.35,-1.56) rectangle (3.35,1.46);
+
+    % Three spheres: image box half-size = 0.92 (sphere radius ~ 0.902)
+    % Centered at x = -2.18, 0.0, +2.18
+    \ifnum\pdfoutput>0
+        \node[inner sep=0pt] at (-2.18, 0) {\includegraphics[width=3.036cm,height=3.036cm]{sphere_mode0.png}};
+        \node[inner sep=0pt] at ( 0.00, 0) {\includegraphics[width=3.036cm,height=3.036cm]{sphere_mode1.png}};
+        \node[inner sep=0pt] at ( 2.18, 0) {\includegraphics[width=3.036cm,height=3.036cm]{sphere_mode2.png}};
+    \else
+        \fill[marker0] (-3.10,-0.92) rectangle (-1.26,0.92);
+        \fill[marker1] (-0.92,-0.92) rectangle ( 0.92,0.92);
+        \fill[marker2] ( 1.26,-0.92) rectangle ( 3.10,0.92);
+    \fi
+
+    % Labels above each individual sphere (aligned to a shared baseline)
+    \node[color=textlight, anchor=base] at (-2.18, 1.10) {$f(\omega)$};
+    \node[color=textlight, anchor=base] at ( 0.00, 1.10) {$\hat{f}(\omega)$};
+    \node[color=errred,    anchor=base] at ( 2.18, 1.10) {$\lvert\hat{f}(\omega) - f(\omega)\rvert$};
+
+    % Minimization objective centered on the angle brackets < ... > underneath the middle sphere,
+    % with "min" hanging to the left and subscript \Omega hanging to the right.
+    \node[color=textlight, anchor=base] at (0.00, -1.27)
+        {$\phantom{_{\!\Omega}}\mathllap{\min}\left\langle \big(\hat{f}(\omega) - f(\omega)\big)^2 \right\rangle_{\!\Omega}$};
+
+\end{tikzpicture}
+\end{document}
