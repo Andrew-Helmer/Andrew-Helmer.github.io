@@ -1282,6 +1282,365 @@
     }
   }
 
+  function initClampedDirectionalDiagram(container) {
+    const stage = document.createElement("div");
+    stage.className = "sh-diagram-stage";
+
+    const canvas = document.createElement("canvas");
+    canvas.className = "sh-diagram-canvas";
+    stage.appendChild(canvas);
+
+    const axesGizmo = createAxesSVG();
+    stage.appendChild(axesGizmo.svg);
+
+    const controls = document.createElement("div");
+    controls.className = "sh-diagram-controls";
+
+    const toggleGroup = document.createElement("div");
+    toggleGroup.className = "sh-segmented-toggle";
+    toggleGroup.setAttribute("role", "group");
+    toggleGroup.setAttribute("aria-label", "Directional light SH projection comparison");
+
+    const btnNaive = document.createElement("button");
+    btnNaive.type = "button";
+    btnNaive.className = "sh-toggle-btn";
+    btnNaive.textContent = "Naive";
+
+    const btnSplit = document.createElement("button");
+    btnSplit.type = "button";
+    btnSplit.className = "sh-toggle-btn active";
+    btnSplit.textContent = "Split";
+
+    const btnCorrect = document.createElement("button");
+    btnCorrect.type = "button";
+    btnCorrect.className = "sh-toggle-btn";
+    btnCorrect.textContent = "Correct";
+
+    toggleGroup.appendChild(btnNaive);
+    toggleGroup.appendChild(btnSplit);
+    toggleGroup.appendChild(btnCorrect);
+    controls.appendChild(toggleGroup);
+
+    container.innerHTML = "";
+    container.appendChild(stage);
+    container.appendChild(controls);
+
+    const gl = canvas.getContext("webgl2", {
+      alpha: true,
+      premultipliedAlpha: true,
+      antialias: true,
+      powerPreference: "low-power"
+    });
+
+    if (!gl) {
+      stage.innerHTML =
+        '<p class="sh-webgl-fallback">WebGL2 is required to view this interactive diagram.</p>';
+      return;
+    }
+
+    const vsSource = `#version 300 es
+    out vec2 vUV;
+    void main() {
+      vec2 pos = vec2((gl_VertexID << 1) & 2, gl_VertexID & 2);
+      vUV = pos;
+      gl_Position = vec4(pos * 2.0 - 1.0, 0.0, 1.0);
+    }`;
+
+    const fsSource = `#version 300 es
+    precision highp float;
+    in vec2 vUV;
+    out vec4 fragColor;
+
+    uniform vec2 uResolution;
+    uniform float uYaw;
+    uniform float uPitch;
+    uniform float uDist;
+    uniform int uViewMode; // 0 = Naive, 1 = Split, 2 = Correct
+    uniform vec3 uLightDir;
+
+    // Exact 2D signed distance to an arrow along +x from x=0 to x=shaftLen+headLen, centered on y=0.
+    float sdArrow2D(vec2 p, float shaftLen, float headLen, float shaftHalfW, float headHalfW) {
+      float v = abs(p.y);
+      float u = p.x;
+
+      vec2 dShaft = abs(vec2(v, u - 0.5 * shaftLen)) - vec2(shaftHalfW, 0.5 * shaftLen);
+      float sdShaft = length(max(dShaft, 0.0)) + min(max(dShaft.x, dShaft.y), 0.0);
+
+      float uh = u - shaftLen;
+      vec2 e = vec2(-headHalfW, headLen);
+      vec2 w = vec2(v - headHalfW, uh);
+      vec2 dSlant = w - e * clamp(dot(w, e) / max(dot(e, e), 1e-6), 0.0, 1.0);
+      vec2 dBase = vec2(v - clamp(v, 0.0, headHalfW), uh);
+      float s = (uh >= 0.0 && (v * headLen + uh * headHalfW <= headHalfW * headLen)) ? -1.0 : 1.0;
+      float sdHead = sqrt(min(dot(dSlant, dSlant), dot(dBase, dBase))) * s;
+
+      return min(sdShaft, sdHead);
+    }
+
+    void main() {
+      vec2 ndc = vUV * 2.0 - 1.0;
+      float aspect = uResolution.x / uResolution.y;
+      ndc.x *= aspect;
+
+      const float tanFov = 0.40;
+
+      float cp = cos(uPitch), sp = sin(uPitch);
+      float cy = cos(uYaw),   sy = sin(uYaw);
+      vec3 camForward = normalize(vec3(-sy * cp, -sp, -cy * cp));
+      vec3 worldUp = vec3(0.0, 1.0, 0.0);
+      vec3 camRight = normalize(cross(camForward, worldUp));
+      vec3 camUp = cross(camRight, camForward);
+
+      vec3 ro = -camForward * uDist;
+      vec3 rd = normalize(camForward + ndc.x * tanFov * camRight + ndc.y * tanFov * camUp);
+
+      float b = dot(ro, rd);
+      float c = dot(ro, ro) - 1.0;
+      float h = b * b - c;
+
+      float distFromCenter = sqrt(max(0.0, 1.0 - h));
+      float pixelRadius = (2.0 * tanFov * uDist) / uResolution.y;
+      float sphereCoverage = 1.0 - smoothstep(1.0 - pixelRadius * 0.75, 1.0 + pixelRadius * 0.75, distFromCenter);
+
+      vec3 sphereCol = vec3(0.0);
+      if (sphereCoverage > 0.0) {
+        float clampedH = max(0.0, h);
+        float t = -b - sqrt(clampedH);
+        vec3 pos = ro + t * rd;
+        vec3 n = normalize(pos);
+
+        float ndotl = dot(n, uLightDir);
+
+        // With I = 0.25 so that the peak across both views is 1.0:
+        // - Naive L1 projection + Lambertian convolution: c0 = 0.25, c_xyz = 0.50 * L -> max(0.25 + 0.50 * (n . L), 0)
+        // - Exact Clamped L1 representation:              c0 = 0.00, c_xyz = 1.00 * L -> max(n . L, 0)
+        float naiveVal = max(0.25 + 0.50 * ndotl, 0.0);
+        float clampedVal = max(ndotl, 0.0);
+
+        float linearVal;
+        if (uViewMode == 0) {
+          linearVal = naiveVal;
+        } else if (uViewMode == 2) {
+          linearVal = clampedVal;
+        } else {
+          linearVal = (ndc.x < 0.0) ? naiveVal : clampedVal;
+        }
+
+        float ldr = pow(clamp(linearVal, 0.0, 1.0), 1.0 / 2.2);
+        sphereCol = vec3(ldr);
+      }
+
+      // Incoming directional light arrow outside the sphere, pointing towards the sphere center
+      // from pStart (r = 1.42) to pEnd (r = 1.05) along uLightDir.
+      vec3 pStart = uLightDir * 1.42;
+      vec3 pEnd   = uLightDir * 1.05;
+
+      vec3 v0 = pStart - ro;
+      vec3 v1 = pEnd - ro;
+      float z0 = dot(v0, camForward);
+      float z1 = dot(v1, camForward);
+
+      vec2 s0 = vec2(dot(v0, camRight), dot(v0, camUp)) / (z0 * tanFov);
+      vec2 s1 = vec2(dot(v1, camRight), dot(v1, camUp)) / (z1 * tanFov);
+
+      vec2 seg = s1 - s0;
+      float L2D = length(seg);
+      vec3 arrowCol = vec3(0.0);
+      float arrowAlpha = 0.0;
+
+      if (L2D > 1e-4) {
+        vec2 dir2D = seg / L2D;
+        vec2 rel = ndc - s0;
+        vec2 pLocal = vec2(
+          dot(rel, dir2D),
+          rel.x * dir2D.y - rel.y * dir2D.x
+        );
+
+        float foreshorten = clamp(L2D / (0.37 * 0.75), 0.25, 1.0);
+        float shaftHalfW = 0.0075;
+        float headHalfW = 0.023;
+        float headLen = min(0.068 * foreshorten, 0.65 * L2D);
+        float shaftLen = max(0.0, L2D - headLen);
+
+        float sd = sdArrow2D(pLocal, shaftLen, headLen, shaftHalfW, headHalfW);
+        float aaNdc = (2.0 / uResolution.y) * 0.75;
+        float arrowCoverage = 1.0 - smoothstep(-aaNdc, aaNdc, sd);
+
+        if (arrowCoverage > 0.0) {
+          // Since the entire arrow is outside the sphere (r >= 1.05), it is only occluded
+          // when it lies on the back hemisphere (dot(uLightDir, camForward) > 0) behind the sphere disc.
+          float inFrontHemisphere = smoothstep(-0.02, 0.02, -dot(uLightDir, camForward));
+          float occluded = sphereCoverage * (1.0 - inFrontHemisphere);
+
+          arrowCol = vec3(0.92);
+          arrowAlpha = arrowCoverage * mix(1.0, 0.20, occluded);
+        }
+      }
+
+      vec4 dst = vec4(sphereCol * sphereCoverage, sphereCoverage);
+      vec4 src = vec4(arrowCol * arrowAlpha, arrowAlpha);
+      fragColor = src + dst * (1.0 - src.a);
+    }`;
+
+    function compileShader(type, src) {
+      const s = gl.createShader(type);
+      gl.shaderSource(s, src);
+      gl.compileShader(s);
+      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+        console.error(gl.getShaderInfoLog(s));
+      }
+      return s;
+    }
+
+    const prog = gl.createProgram();
+    gl.attachShader(prog, compileShader(gl.VERTEX_SHADER, vsSource));
+    gl.attachShader(prog, compileShader(gl.FRAGMENT_SHADER, fsSource));
+    gl.linkProgram(prog);
+
+    const vao = gl.createVertexArray();
+    const uLocs = {
+      resolution: gl.getUniformLocation(prog, "uResolution"),
+      yaw: gl.getUniformLocation(prog, "uYaw"),
+      pitch: gl.getUniformLocation(prog, "uPitch"),
+      dist: gl.getUniformLocation(prog, "uDist"),
+      viewMode: gl.getUniformLocation(prog, "uViewMode"),
+      lightDir: gl.getUniformLocation(prog, "uLightDir")
+    };
+
+    const dirNorm = Math.hypot(0.705, 0.708, -0.033);
+    const LIGHT_DIR = [0.705 / dirNorm, 0.708 / dirNorm, -0.033 / dirNorm];
+
+    const DEFAULT_YAW = 0.38;
+    const DEFAULT_PITCH = 0.32;
+    let yaw = DEFAULT_YAW;
+    let pitch = DEFAULT_PITCH;
+    const dist = 2.85;
+    let viewMode = 1; // 0 = Naive, 1 = Split, 2 = Correct
+    let isVisible = false;
+    let rafId = null;
+
+    axesGizmo.update(yaw, pitch);
+
+    function renderFrame() {
+      rafId = null;
+      if (!isVisible) return;
+
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const rect = stage.getBoundingClientRect();
+      const w = Math.max(1, Math.round(rect.width * dpr));
+      const h = Math.max(1, Math.round(rect.height * dpr));
+
+      if (canvas.width !== w || canvas.height !== h) {
+        canvas.width = w;
+        canvas.height = h;
+      }
+
+      gl.viewport(0, 0, w, h);
+      gl.clearColor(0.0, 0.0, 0.0, 0.0);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+
+      gl.useProgram(prog);
+      gl.bindVertexArray(vao);
+
+      gl.uniform2f(uLocs.resolution, w, h);
+      gl.uniform1f(uLocs.yaw, yaw);
+      gl.uniform1f(uLocs.pitch, pitch);
+      gl.uniform1f(uLocs.dist, dist);
+      gl.uniform1i(uLocs.viewMode, viewMode);
+      gl.uniform3f(uLocs.lightDir, LIGHT_DIR[0], LIGHT_DIR[1], LIGHT_DIR[2]);
+
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+    }
+
+    function requestRender() {
+      if (rafId === null && isVisible) {
+        rafId = requestAnimationFrame(renderFrame);
+      }
+    }
+
+    let dragging = false;
+    let lastX = 0;
+    let lastY = 0;
+
+    canvas.addEventListener("pointerdown", (e) => {
+      if (e.button !== 0 && e.pointerType === "mouse") return;
+      dragging = true;
+      lastX = e.clientX;
+      lastY = e.clientY;
+      canvas.setPointerCapture(e.pointerId);
+    });
+
+    canvas.addEventListener("pointermove", (e) => {
+      if (!dragging) return;
+      const dx = e.clientX - lastX;
+      const dy = e.clientY - lastY;
+      lastX = e.clientX;
+      lastY = e.clientY;
+
+      yaw -= dx * 0.007;
+      pitch = Math.max(-1.45, Math.min(1.45, pitch + dy * 0.007));
+
+      axesGizmo.update(yaw, pitch);
+      requestRender();
+    });
+
+    function endDrag(e) {
+      if (!dragging) return;
+      dragging = false;
+      if (e && e.pointerId !== undefined && canvas.hasPointerCapture(e.pointerId)) {
+        canvas.releasePointerCapture(e.pointerId);
+      }
+    }
+
+    canvas.addEventListener("pointerup", endDrag);
+    canvas.addEventListener("pointercancel", endDrag);
+
+    canvas.addEventListener("dblclick", () => {
+      yaw = DEFAULT_YAW;
+      pitch = DEFAULT_PITCH;
+      axesGizmo.update(yaw, pitch);
+      requestRender();
+    });
+
+    function setViewMode(mode) {
+      if (viewMode === mode) return;
+      viewMode = mode;
+      btnNaive.classList.toggle("active", mode === 0);
+      btnSplit.classList.toggle("active", mode === 1);
+      btnCorrect.classList.toggle("active", mode === 2);
+      requestRender();
+    }
+
+    btnNaive.addEventListener("click", () => setViewMode(0));
+    btnSplit.addEventListener("click", () => setViewMode(1));
+    btnCorrect.addEventListener("click", () => setViewMode(2));
+
+    if ("IntersectionObserver" in window) {
+      const io = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            isVisible = entry.isIntersecting;
+            if (isVisible) requestRender();
+          }
+        },
+        { threshold: 0.01 }
+      );
+      io.observe(container);
+    } else {
+      isVisible = true;
+      requestRender();
+    }
+
+    if ("ResizeObserver" in window) {
+      const ro = new ResizeObserver(() => {
+        requestRender();
+      });
+      ro.observe(stage);
+    } else {
+      window.addEventListener("resize", requestRender, { passive: true });
+    }
+  }
+
   function initAllDiagrams() {
     const el1 = document.getElementById("sh-diagram-reflective-sphere");
     if (el1) initReflectiveSphereDiagram(el1);
@@ -1291,6 +1650,9 @@
 
     const el3 = document.getElementById("sh-diagram-pantheon-fit");
     if (el3) initPantheonFitDiagram(el3);
+
+    const el4 = document.getElementById("sh-diagram-clamped-directional");
+    if (el4) initClampedDirectionalDiagram(el4);
   }
 
   if (document.readyState === "loading") {

@@ -241,8 +241,7 @@ And in this case, "projection" is no longer the optimal least squares solution, 
 
 For a single point light source, we can \*perfectly\* represent the Lambertian reflected light using the clamped function, with zero error. But naive SH projection is overly soft, because it's minimizing error for the wrong reconstruction function.
 
-TODO: interactive diagram showing naive projection vs. clamped, where the light direction can be dragged around
-{: todo}
+<div id="sh-diagram-clamped-directional" class="sh-diagram"></div>
 
 It's also generally the case that least squares error is rarely ideal for graphics applications. A relative error is usually better, and there are even better perceptual error metrics depending on what you know about your scene.
 
