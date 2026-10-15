@@ -5,8 +5,8 @@
 % Colors matching blog _variables.scss
 \definecolor{bg}{HTML}{1E1E1E}
 \definecolor{textlight}{HTML}{ECECEC}
-\definecolor{circlelight}{HTML}{D4D4D4}
-\definecolor{muted}{HTML}{858585}
+\definecolor{axisgray}{HTML}{4E4E4E}
+\definecolor{circlegray}{HTML}{808080}
 \definecolor{errbar}{HTML}{B4B4B4}
 \definecolor{shblue}{HTML}{569CD6}
 \definecolor{omegablue}{HTML}{8ABBE6}
@@ -19,19 +19,19 @@
     font=\large
 ]
     % Tighter bounding box around the diagram so it renders larger on the page
-    \path[use as bounding box] (-1.85,-1.58) rectangle (2.95,2.02);
-    \fill[bg] (-1.85,-1.58) rectangle (2.95,2.02);
+    \path[use as bounding box] (-1.85,-1.58) rectangle (2.95,2.08);
+    \fill[bg] (-1.85,-1.58) rectangle (2.95,2.08);
 
-    % Coordinate axes (dashed)
-    \draw[->, dashed, color=muted, line width=0.75pt, dash pattern=on 4pt off 3.5pt]
-        (-1.65,0) -- (2.20,0)
-        node[below, color=textlight, yshift=-3pt] {$x$};
-    \draw[->, dashed, color=muted, line width=0.75pt, dash pattern=on 4pt off 3.5pt]
-        (0,-1.50) -- (0,1.88)
-        node[left, color=textlight, xshift=-3pt] {$y$};
+    % Coordinate axes (solid, darker/fainter, with x and y aligned right at the arrow tips)
+    \draw[->, color=axisgray, line width=0.75pt]
+        (-1.65,0) -- (2.15,0)
+        node[right, color=textlight, inner sep=3pt] {$x$};
+    \draw[->, color=axisgray, line width=0.75pt]
+        (0,-1.50) -- (0,1.78)
+        node[above, color=textlight, inner sep=3pt] {$y$};
 
-    % Unit circle (dashed, r = 1 removed)
-    \draw[dashed, color=circlelight, line width=0.9pt, dash pattern=on 4.5pt off 3.5pt]
+    % Unit circle (dashed, darker than before but lighter than the axes lines)
+    \draw[dashed, color=circlegray, line width=0.9pt, dash pattern=on 4.5pt off 3.5pt]
         (0,0) circle (1.0);
 
     % Unit direction vector \omega (shortened to touch the unit circle, label at tip)
