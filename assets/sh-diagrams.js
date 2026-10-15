@@ -3,7 +3,7 @@
 
   const HDR_WEBP_URL = "/assets/pantheon-hdr.webp";
   const LOG_EPS = 0.002;
-  const LOG_MAX_LUM = 8.03125;
+  const LOG_MAX_LUM = 12.15625;
   let hdrPromise = null;
 
   function loadPantheonHDR() {
