@@ -67,7 +67,7 @@ These coefficients gives us a pretty simple spherical approximation.
 
 <div id="sh-diagram-pantheon-fit" class="sh-diagram"></div>
 
-Well, we pretty much just reinvented spherical harmonic approximations\! Yup, really. This is most likely something countless people have done without even realizing that what they did was equivalent to using SH.
+Well, we pretty much just reinvented spherical harmonic approximations\! This is most likely something countless people have done without even realizing that what they did was equivalent to using SH.
 
 Maybe it would be more accurate to say that this is a valid, though inefficient, implementation of a specific SH approximation. We would call this an $$l = 1$$, or L1, spherical harmonics approximation, where "$$l$$" is the degree of the polynomial. You can also have a $$l = 0$$ SH approximation, with a single constant like $$\hat{f}(\omega) = c_0$$, or higher $$l$$ values that store coefficients for higher degrees of polynomials, like $$l = 2$$ includes the terms $$x^2$$, $$xy$$, $$xz$$, $$y^2$$, etc. each with their own coefficient. Higher degree polynomials have a bit of extra complexity we'll talk about later, but it's still just a basic linear model, with a least squares fit\!
 
@@ -237,9 +237,9 @@ But even the most vanilla implementations of SH almost always add a clamp to pre
 
 $$\hat{f}(\omega_x, \omega_y, \omega_z) = \max(c_0 + c_x \omega_x + c_y \omega_y + c_z \omega_z, 0)$$
 
-And in this case, "projection" is no longer the optimal least squares solution, and overall energy becomes biased \- the average lighting is too bright. That's not always necessarily bad, and I've even seen attempts to address it introduce worse problems. But it is possible to do better in specific cases. For example, SH approximations are often used to represent reflected/outgoing radiance from a Lambertian/diffuse BRDF. In this case, the direction used is a surface normal (because for a given normal, light is equally reflected in all visible directions with this BRDF).
+And in this case, "projection" is no longer the optimal least squares solution, and overall energy becomes biased \- the average lighting is too bright, and not as directional as it should be. That's not always necessarily bad, and I've even seen attempts to address it introduce worse problems. But it is possible to do better in specific cases. For example, SH approximations are often used to represent reflected/outgoing radiance from a Lambertian/diffuse BRDF. In this case, the direction used is a surface normal (because for a given normal, light is equally reflected in all visible directions with this BRDF).
 
-For a single point light source, we can \*perfectly\* represent the Lambertian reflected light using the clamped function, with zero error. But naive SH projection is overly soft, because it's minimizing error for the wrong reconstruction function.
+As an example, for an incoming directional light, we can *perfectly* represent the Lambertian reflected light using the clamped function, with zero error. But naive SH projection is overly soft, because it's minimizing error for the wrong reconstruction function.
 
 <div id="sh-diagram-clamped-directional" class="sh-diagram"></div>
 
@@ -526,7 +526,7 @@ $$
 
 Coming back to the spherical harmonics vs. SH approximations, each one of these $$Y$$ functions is *a spherical harmonic*, and this is what spherical harmonics actually are: an infinite set of (basis) functions on a sphere. They are infinite becaue there are more basis functions for higher and higher degree polynomials. An SH approximation model is the linear combination (weighted sum) of a finite set of these basis functions.
 
-The basis functions are unquestionably useful when generalizing to higher polynomials, and when doing mathematics with SH in general. And of course there is a real benefit of conforming to standard definitions and notation. But for approximations, I personally find that the pi's, square roots, and more complicated fractions are a bit less elegant, and not worth the commonality of the basis functions. I prefer the simpler reconstruction (even of my orthogonal form), and the rational coefficients in the encoding.
+The basis functions are unquestionably useful when generalizing to higher polynomials, and when doing mathematics with SH in general. And of course there is a real benefit of conforming to standard definitions and notation. But for approximations in graphics, I prefer the simpler reconstruction (even with the orthogonal form), and the purely rational coefficients in the encoding.
 
 Additionally, I can't recall if any "Introduction to SH" I've read mentions that SH is a least-squares solution, though it's mentioned and proved in [Stupid Spherical Harmonics (SH) Tricks](https://www.ppsloan.org/publications/StupidSH36.pdf) by Peter-Pike Sloan. I find that this is quite a nice way to reinvent SH from principles that more engineers already know, and it illuminates that a naive application of SH can lead to bias and other errors.
 
@@ -534,6 +534,8 @@ Now, if this is your first introduction to SH, and you want to bridge the gap fu
 
 After reading that nicebyte article, I also recommend Graham Hazel's [Alternative Definition of Spherical Harmonics for Lighting](https://grahamhazel.com/blog/2017/12/18/alternative-definition-of-spherical-harmonics-for-lighting/). Hazel also defines SH on a sphere with surface area 1, which is really the same as using the average over the sphere instead of the integral.
 
+Finally, this is not directly related to SH, but I definitely want to highlight all of Bartosz Ciechanowski's amazing blog, and particularly his post [Lights and Shadows](https://ciechanow.ski/lights-and-shadows/). That was a strong inspiration for the interactive diagrams in this post
+
 ## AI Disclaimer
 
-All of the prose writing in this article is my own, not AI. I did most of the derivations by hand and asked AI to convert to proper KaTeX formatting, and a few other things it filled out (like the Orthogonal Form). However all of the diagrams were generated by AI (with multiple iterations), and I also incorporated feedback and error-corrections from AI.
+All of the prose writing in this article is my own, not AI. I did most of the derivations by hand and asked AI to convert to proper KaTeX formatting, and a few other things it filled out (like the Orthogonal Form). However all of the diagrams were implemented by AI (with multiple iterations), and I also incorporated feedback and error-corrections from AI.
