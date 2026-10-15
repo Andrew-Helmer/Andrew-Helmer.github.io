@@ -99,13 +99,15 @@ $$\underset{c_0}{\operatorname{argmin}} \int_\Omega (\hat{f}(\omega) - f(\omega)
 
 In this case, the integral over big-omega $$\Omega$$ means we're integrating over the sphere, and the little omega $$\omega$$ represents a direction.
 
-But rather than using spherical integrals, we're going to switch to spherical \*averages\* (means), because minimizing the integral of squared error is the same as minimizing the average squared error. Formally, the average is the same as the integral divided by the surface area of the sphere:
+But rather than using spherical integrals, we're going to switch to spherical *averages* (means), because minimizing the integral of squared error is the same as minimizing the average squared error. The notation I will use for a spherical average uses the angle brackets $$\langle \, \rangle_\Omega$$. The more standard notation drops the $$\Omega$$ subscript, but I think it's clearer to keep it, especially to distinguish between vectors which also use the angle brackets. 
+
+Formally, the average is the same as the integral divided by the surface area of the sphere:
 
 $$\langle f(\omega) \rangle_\Omega = \frac{\int_\Omega f(\omega) \, \mathrm{d}\omega}{4\pi}$$
 
-Doing this means that we can ignore the surface area of the sphere, which makes the math and programming easier. The notation I will use for a spherical average uses the angle brackets $$\langle \, \rangle_\Omega$$. The more standard notation drops the $$\Omega$$ subscript, but I think it's clearer to keep it, especially to distinguish between vectors which also use the angle brackets. 
+Doing this means that we can ignore the surface area of the sphere, which makes the math and programming easier.
 
-Anyway, I am not the first person to use spherical averages to simplify SH, and I think Graham Hazel did the best job fleshing this out, but I'll link to that article in the [Bridging the Gap](#bridging-the-gap) section. Anyway, so we are trying to solve:
+I am not the first person to use spherical averages to simplify SH, and I think Graham Hazel did the best job fleshing this out, but I'll link to that article in the [Bridging the Gap](#bridging-the-gap) section. Anyway, so we are trying to solve:
 
 $$\underset{c_0}{\operatorname{argmin}} \langle (\hat{f}(\omega) - f(\omega))^2 \rangle_\Omega$$
 
@@ -131,7 +133,7 @@ Plug this back a few lines up:
 
 $$\langle 2 (\hat{f}(\omega) - f(\omega)) \cdot 1 \rangle_\Omega = 0$$
 
-Divide by 2, and separate all the average terms, like this:
+Divide by 2, plug in the definition of $$\hat{f}(\omega)$$, and separate all the average terms, and we have this:
 
 $$\langle c_0 \rangle_\Omega + \langle c_x \omega_x \rangle_\Omega + \langle c_y \omega_y \rangle_\Omega + \langle c_z \omega_z \rangle_\Omega = \langle f(\omega) \rangle_\Omega$$
 
@@ -140,6 +142,7 @@ Now the average $$\langle c_0 \rangle_\Omega$$ is of course $$c_0$$, it's a cons
 $$c_0 = \langle f(\omega) \rangle_\Omega$$
 
 **The constant is just the average value of our function over the whole sphere\!**
+{: style="text-align: center"}
 
 Now let's do the same for $$c_x$$...
 
@@ -171,11 +174,11 @@ Because of spherical symmetry, every average term is zero except the $$\omega_x^
 
 $$\langle c_x \omega_x^2 \rangle_\Omega = \langle f(\omega) \, \omega_x \rangle_\Omega$$
 
-Because $$\omega$$ is a unit vector, we know that:
+Because $$\omega$$ is a unit vector, we know that the length and length squared are one:
 
 $$\omega_x^2 + \omega_y^2 + \omega_z^2 = 1$$
 
-So we can also say
+So we can also say that the average squared values add up to 1:
 
 $$\langle \omega_x^2 \rangle_\Omega + \langle \omega_y^2 \rangle_\Omega + \langle \omega_z^2 \rangle_\Omega = 1$$
 
@@ -219,7 +222,7 @@ def encode_linear_coefficients_fast(spherical_fn, num_dirs=8192, seed=None):
     return mean
 {% endhighlight %}
 
-For a long time I found spherical harmonics a bit scary. Personally, derived this way, I find it hard to imagine a simpler spherical approximation to understand and implement\! It's a single line of code to evaluate, and only a few lines of code to encode, and the derivation is not really hard. And on top of that, it's doing something that many engineers are already familiar with, just a simple linear model with least squares, plus a trick to encode the coefficients in a faster way.
+For a long time I found spherical harmonics a bit scary. Personally, derived this way, I find it hard to imagine a simpler spherical approximation to understand and implement\! It's a single line of code to evaluate $$\hat{f}(\omega)$$, and only a few lines of code to encode the coefficients, and the derivation is not really hard. And on top of that, it's doing something that many engineers are already familiar with, just a simple linear model with least squares, plus a trick to encode the coefficients in a faster way.
 
 ## Questioning Our Assumptions
 
@@ -237,15 +240,15 @@ But even the most vanilla implementations of SH almost always add a clamp to pre
 
 $$\hat{f}(\omega_x, \omega_y, \omega_z) = \max(c_0 + c_x \omega_x + c_y \omega_y + c_z \omega_z, 0)$$
 
-And in this case, "projection" is no longer the optimal least squares solution, and overall energy becomes biased \- the average lighting is too bright, and not as directional as it should be. That's not always necessarily bad, and I've even seen attempts to address it introduce worse problems. But it is possible to do better in specific cases. For example, SH approximations are often used to represent reflected/outgoing radiance from a Lambertian/diffuse BRDF. In this case, the direction used is a surface normal (because for a given normal, light is equally reflected in all visible directions with this BRDF).
+And in this case, "projection" is no longer the optimal least squares solution, and overall energy becomes biased \- the average lighting is too bright, and not as directional as it should be. That's not always necessarily bad, and I've even seen attempts to address it introduce worse problems. But it is possible to do better in specific cases. 
 
-As an example, for an incoming directional light, we can *perfectly* represent the Lambertian reflected light using the clamped function, with zero error. But naive SH projection is overly soft, because it's minimizing error for the wrong reconstruction function.
+For example, SH approximations are often used to represent reflected/outgoing radiance from a Lambertian/diffuse BRDF. In this case, the direction used is a surface normal (because for a given normal, light is equally reflected in all visible directions with this BRDF). If our lighting is a simple directional light, we can *perfectly* represent the Lambertian reflected light using the clamped function, with zero error. But naive SH projection is overly soft, because it's minimizing error for the wrong reconstruction function.
 
 <div id="sh-diagram-clamped-directional" class="sh-diagram"></div>
 
 It's also generally the case that least squares error is rarely ideal for graphics applications. A relative error is usually better, and there are even better perceptual error metrics depending on what you know about your scene.
 
-Finally, many people make the mistake of using standard or naive SH projection when your incoming light distribution is actually a hemisphere, for example when generating directional lightmaps. This can actually lead to meaningful bias, ending up too bright even for a completely flat surface where we should be matching non-directional lightmaps.
+Finally, many people make the mistake of using standard or naive SH projection when your incoming light distribution is actually a *hemisphere*, for example when generating directional lightmaps. This can actually lead to meaningful bias, ending up too bright even for a completely flat surface where we should be matching non-directional lightmaps.
 
 <div id="sh-diagram-hemisphere-bias" class="sh-diagram"></div>
 
