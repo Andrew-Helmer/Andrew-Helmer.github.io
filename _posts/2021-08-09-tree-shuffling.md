@@ -1,7 +1,7 @@
 ---
 layout: post
-image: /images/owen-shuffling.jpg
-meta_image: /images/owen-shuffling-meta.jpg
+image: /post_assets/2021-08-09-tree-shuffling/owen-shuffling.jpg
+meta_image: /post_assets/2021-08-09-tree-shuffling/owen-shuffling-meta.jpg
 title: "Fast Owen-scrambling of Arrays"
 subtitle: "Different ways to randomly permute implicit trees in O(n) time"
 ---

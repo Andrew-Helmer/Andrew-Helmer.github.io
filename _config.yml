@@ -88,5 +88,3 @@ exclude:
   - LICENSE
   - README.md
   - CNAME
-  - images/sh-header-src
-  - images/spherical-harmonics-header.tex
