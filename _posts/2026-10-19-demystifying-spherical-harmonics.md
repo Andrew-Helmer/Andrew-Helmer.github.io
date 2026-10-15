@@ -43,8 +43,7 @@ Where we will precalculate and store our four coefficients: $$c_0, c_x, c_y, c_z
 
 It might be obvious that you can think of the $$c_0$$ term as an overall intensity, and the $$c_x, c_y, c_z$$ as a directional intensity, for a particular direction.
 
-TODO: interactive diagram showing simple spherical approximation
-{: todo}
+<div id="sh-diagram-linear-approx" class="sh-diagram"></div>
 
 So how do we get these four coefficients? A quick idea might be to use the coefficients that minimize the (sum/average/integrated) square error against the original function or a high-resolution version. In other words, a good old fashioned linear regression. In this code we'll sample some random directions and regress on those.
 
