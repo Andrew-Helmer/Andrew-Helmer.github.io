@@ -7,13 +7,13 @@ date: 2026-10-19
 latex: true
 ---
 
-Ever since I first heard of spherical harmonics as an approximation in computer graphics, I have felt that the way they are explained is too complicated. Sometimes they assume a prerequisite amount of math knowledge that isn't really necessary, and they tend to be very abstract. Other times they show something complex and through a lot of effort end up simplifying them to something usable. In addition to making it harder to learn, I think those approaches to SH can lead to misapplication. SH introductions often have discussion about certain SH artifacts (ringing), but there is a whole other class of common problems that is ignored.
+Ever since I first heard of spherical harmonics as an approximation in computer graphics, I have felt that the way they are explained is too complicated. Sometimes the explanations assume a prerequisite amount of math knowledge that isn't really necessary, and they tend to be very abstract. Other times they show something complex and through a lot of effort end up simplifying them to something usable. In addition to making it harder to learn, I think those approaches to SH can lead to misapplication. SH introductions often have discussion about certain SH artifacts (ringing and negative values), but ignore another class of common issues.
 
 <!--more-->
 
 {:todo: style="color: red"}
 
-In this post, what we're going to do is start with a common problem in graphics, solve it as simply as we can using tools that I think many engineers are familiar with, and end up getting something that is actually equivalent to SH approximations. This is aimed towards people who want to learn to use SH in graphics, but even if you already know how to use SH in graphics, I hope that this perspective is still useful.
+In this post, what we're going to do is start with a common problem in graphics, solve it as simply as we can using tools that I think many programmers are familiar with, and end up getting something that is equivalent to SH approximations. This is aimed towards people who want to learn to use SH in graphics, but even if you already know how to use SH in graphics, I hope that this approach to SH is still useful think about.
 
 ## Spherical Data
 
@@ -24,13 +24,13 @@ This visualization is a simple example of what this function might look like. Yo
 <div id="sh-diagram-reflective-sphere" class="diagram"></div>
 <script defer src="{{ site.baseurl }}/post_assets/2026-10-19-demystifying-spherical-harmonics/sh-diagrams.js"></script>
 
-For a given direction, calculating the value is expensive. It could mean ray-tracing, path-tracing, or rasterizing a pixel. In something like a game, you typically don't want to do this with every point that you want to shade. Alternatively, you can pre-render a high resolution version of the spherical function, possibly storing in a cubemap or octahedral map. But this requires a lot of memory for many points in space.
+For a given direction, calculating the value is expensive. It could mean ray-tracing, path-tracing, or rasterizing a pixel. In something like a game, you typically don't want to fully calculate a reflection value for every point that you want to shade. Alternatively, you can pre-render a high resolution version of the spherical function, possibly storing in a cubemap or an octahedral map. But this requires a lot of memory for many points in space.
 
-If we don't need very high resolution, instead we may want to store a fast very low resolution version, we'll call $$\hat{f}$$. Note that $$\hat{f}$$ is called "F hat" and the hat is common notation for approximations in statistics.
+If we don't need very high resolution, instead we may want to store a fast very low resolution approximation, we'll call $$\hat{f}$$. Note that $$\hat{f}$$ is called "F hat" and the hat is common notation for approximations in statistics.
 
 A 6-pixel (one for each face) cubemap or 8-value octahedral map works in many cases, but there are downsides which I won't go into here.
 
-So instead, let's come up with a simple approximation of the function. A linear model like this is just about the simplest reasonable approximation I can think of (aside from a flat constant):
+So instead, let's come up with a mathematical approximation. A linear model like this is just about the simplest reasonable approximation I can think of (aside from a flat constant):
 
 <div class="callout-box" markdown="1">
 <div class="callout-title">Linear (L1) Approximation Model</div>
@@ -41,7 +41,7 @@ $$\hat{f}(\omega) = c_0 + c_x \omega_x + c_y \omega_y + c_z \omega_z$$
 
 Where we will precalculate and store our four coefficients: $$c_0, c_x, c_y, c_z$$. 
 
-It might be obvious that you can think of the $$c_0$$ term as an overall intensity, and the $$c_x, c_y, c_z$$ as a directional intensity, for a particular direction. And if the length of the $$\langle c_x, c_y, c_z \rangle$$ vector is larger than $$c_0$$, you can get negative values (as shown in red here).
+It might be obvious that you can think of the $$c_0$$ term as an overall intensity, and the $$c_x, c_y, c_z$$ as a directional intensity, for a particular direction. And if the length of the $$\langle c_x, c_y, c_z \rangle$$ vector is larger than $$c_0$$, you can get negative values (which will render in red below).
 
 <div id="sh-diagram-linear-approx" class="diagram"></div>
 
@@ -113,9 +113,11 @@ I am not the first person to use spherical averages to simplify SH, and I think 
 
 $$\underset{c_0}{\operatorname{argmin}} \langle (\hat{f}(\omega) - f(\omega))^2 \rangle_\Omega$$
 
-To find a minimum, we need to find the value of $$c_0$$ such that the first derivative of this is zero. Typically to minimize you'd also worry about local minima or finding maxima, but as we'll see, there is only one solution here. This function is convex, it has no maxima and only one minimum.
+To find a minimum, we need to find the value of $$c_0$$ such that the first derivative of this is zero.
 
 $$\frac{\partial \langle (\hat{f}(\omega) - f(\omega))^2 \rangle_\Omega}{\partial c_0} = 0$$
+
+Typically to minimize you'd also worry about local minima or finding maxima, but as we'll see, there is only one solution here - the function is convex.
 
 The derivative of an average is the average of the derivative:
 
@@ -125,17 +127,17 @@ Typical power and chain rule:
 
 $$\left\langle 2 (\hat{f}(\omega) - f(\omega)) \frac{\partial(\hat{f}(\omega) - f(\omega))}{\partial c_0} \right\rangle_\Omega = 0$$
 
-Now let's focus on $$\frac{\partial(\hat{f}(\omega) - f(\omega))}{\partial c_0}$$
+Now let's focus on $$\frac{\partial(\hat{f}(\omega) - f(\omega))}{\partial c_0}$$.
 
 $$\frac{\partial f(\omega)}{\partial c_0}$$ is zero, because $$c_0$$ is unrelated to the original function.
 
-$$\frac{\partial(c_0 + c_x \omega_x + c_y \omega_y + c_z \omega_z)}{\partial c_0}$$ is simply $$1$$.
+Expanding $$\hat{f}(\omega)$$, we have $$\frac{\partial(c_0 + c_x \omega_x + c_y \omega_y + c_z \omega_z)}{\partial c_0}$$, which is simply $$1$$.
 
 Plug this back a few lines up:
 
 $$\langle 2 (\hat{f}(\omega) - f(\omega)) \cdot 1 \rangle_\Omega = 0$$
 
-Divide by 2, plug in the definition of $$\hat{f}(\omega)$$, and separate all the average terms, and we have this:
+Divide by 2, plug in the definition of $$\hat{f}(\omega)$$ again, and separate all the average terms, and we have this:
 
 $$\langle c_0 \rangle_\Omega + \langle c_x \omega_x \rangle_\Omega + \langle c_y \omega_y \rangle_\Omega + \langle c_z \omega_z \rangle_\Omega = \langle f(\omega) \rangle_\Omega$$
 
@@ -152,7 +154,7 @@ Now let's do the same for $$c_x$$...
 
 $$\underset{c_x}{\operatorname{argmin}} \langle (\hat{f}(\omega) - f(\omega))^2 \rangle_\Omega$$
 
-like the previous derivation, we would first take the derivative and set it to zero. Like before, we start with the chain rule and power rule and move the average outside the derivative.
+Like the previous derivation, we would first take the derivative and set it to zero. And then starting with the chain rule and power rule and move the average outside the derivative:
 
 $$2 \left\langle (\hat{f}(\omega) - f(\omega)) \frac{\partial(\hat{f}(\omega) - f(\omega))}{\partial c_x} \right\rangle_\Omega = 0$$
 
@@ -174,7 +176,7 @@ Expanding $$\hat{f}(\omega)$$ and separating the average terms, we have
 
 $$\langle c_0 \omega_x \rangle_\Omega + \langle c_x \omega_x^2 \rangle_\Omega + \langle c_y \omega_y \omega_x \rangle_\Omega + \langle c_z \omega_z \omega_x \rangle_\Omega = \langle f(\omega) \, \omega_x \rangle_\Omega$$
 
-Because of spherical symmetry, every average term is zero except the $$\omega_x^2$$ one. So we have:
+Because of spherical symmetry, every average term is zero except the $$\omega_x^2$$ one, because $$\omega_x^2$$ is non-negative everywhere. So we have:
 
 $$\langle c_x \omega_x^2 \rangle_\Omega = \langle f(\omega) \, \omega_x \rangle_\Omega$$
 
@@ -226,11 +228,11 @@ def encode_linear_coefficients_fast(spherical_fn, num_dirs=8192, seed=None):
     return mean
 {% endhighlight %}
 
-For a long time I found spherical harmonics a bit scary. Personally, derived this way, I find it hard to imagine a simpler spherical approximation to understand and implement\! It's a single line of code to evaluate $$\hat{f}(\omega)$$, and only a few lines of code to encode the coefficients, and the derivation is not really hard. And on top of that, it's doing something that many engineers are already familiar with, just a simple linear model with least squares, plus a trick to encode the coefficients in a faster way.
+For a long time I found spherical harmonics a bit scary. Personally, derived this way, I find it hard to imagine a simpler spherical approximation to understand and implement\! It's a single line of code to evaluate $$\hat{f}(\omega)$$, and only a few lines of code to encode the coefficients. And on top of that, it's doing something that many engineers are already familiar with, just a simple linear model with least squares, plus a trick to encode the coefficients in a faster way.
 
 ## Questioning Our Assumptions
 
-Now that we've derived the fast encoding, let's reconsider some important assumptions we had to make for this fast encoding to be the least-squares solution.
+Now that we've derived the fast encoding, let's reconsider some important assumptions we made for this fast encoding to be the least-squares solution.
 
 1. Our reconstruction function is $$\hat{f}(\omega) = c_0 + c_x \omega_x + c_y \omega_y + c_z \omega_z$$  
 1. We want to minimize least squares error, not some other error.  
@@ -250,7 +252,7 @@ For example, SH approximations are often used to represent reflected/outgoing ra
 
 <div id="sh-diagram-clamped-directional" class="diagram"></div>
 
-It's also generally the case that least squares error is rarely ideal for graphics applications. A relative error is usually better, and there are even better perceptual error metrics depending on what you know about your scene.
+Least squares error is also rarely ideal for graphics application. A relative (pseudo-logarithmic) error is usually better, and there are even better perceptual error metrics depending on what you know about your scene.
 
 Finally, many people make the mistake of using standard or naive SH projection when your incoming light distribution is actually a *hemisphere*, for example when generating directional lightmaps. This can actually lead to meaningful bias, ending up too bright even for a completely flat surface where we should be matching non-directional lightmaps.
 
@@ -264,13 +266,13 @@ Let's say we have an L1 spherical harmonic approximation, encoded with our 4 coe
 
 I'll spoil the surprise before doing the derivation this time. It turns out that for a given convolution $$g(f)$$, we can simply precompute 2 coefficient factors, one for $$c_0$$ and another that multiplies $$c_x, c_y, c_z$$. For example, let's say we have a Lambertian (diffuse) BRDF. For a given surface normal $$n$$, to "convolve" from incoming radiance for every direction to the reflected radiance (which is uniform across all reflection directions), you just multiply the $$c_x, c_y, c_z$$ components by $$2/3$$! This is taking into account the typical $$\frac{1}{\pi}$$ BRDF constant.
 
-Now we'll derive this. Let's say that a convolution takes in a spherical function or data, a direction, and outputs a value that is a weighted integral of the original spherical data.
+Now we'll derive this rule for convolutions, for $$c_0$$ at least. Let's say that a convolution takes in a spherical function or data, a direction, and outputs a value that is a weighted integral of the original spherical data.
 
 $$g(f, n) = \int_\Omega h(n \cdot \omega) \, f(\omega) \, \mathrm{d}\omega$$
 
 Note that this convolution kernel $$h$$ doesn't depend on two arbitrary directions, only the dot product (i.e. angle) between them. This means the convolution is symmetric around the direction $$n$$, and the same everywhere around the sphere.
 
-Now we can also express our encoding as an integral, for example
+Now we can also express our $$c_0$$ encoding rule as an integral, for example
 
 $$c_0(f) = \int_\Omega \frac{f(\omega)}{4\pi} \, \mathrm{d}\omega$$
 
@@ -286,17 +288,17 @@ And pull $$f(\omega)$$ out of the inner integral because it's unrelated to $$\ma
 
 $$c_0(g(f)) = \int_\Omega \left( \int_\Omega h(n \cdot \omega) \, \mathrm{d}n \cdot \frac{f(\omega)}{4\pi} \right) \mathrm{d}\omega$$
 
-Now $$\int_\Omega h(n \cdot \omega) \, \mathrm{d}n$$ is a constant value, we'll call it $$k$$, so we have
+Now $$\int_\Omega h(n \cdot \omega) \, \mathrm{d}n$$ is a constant value, we'll call it $$k_0$$, so we have
 
-$$c_0(g(f)) = \int_\Omega \frac{k \, f(\omega)}{4\pi} \, \mathrm{d}\omega$$
+$$c_0(g(f)) = \int_\Omega \frac{k_0 \, f(\omega)}{4\pi} \, \mathrm{d}\omega$$
 
-Pull the $$k$$ out of the integral, it's a constant:
+Pull the $$k_0$$ out of the integral, it's a constant:
 
-$$c_0(g(f)) = k \int_\Omega \frac{f(\omega)}{4\pi} \, \mathrm{d}\omega$$
+$$c_0(g(f)) = k_0 \int_\Omega \frac{f(\omega)}{4\pi} \, \mathrm{d}\omega$$
 
 Which is simply
 
-$$c_0(g(f)) = k \, c_0(f)$$
+$$c_0(g(f)) = k_0 \, c_0(f)$$
 
 This might seem a bit mathy, but I think in plain English it's intuitive. $$c_0$$ is just the average intensity of our function over a sphere. A convolution multiplies the average intensity up or down, but that's all it can do, and the multiplication amount is constant (it's the integral of the weight of the convolution kernel over the sphere).
 
@@ -433,7 +435,7 @@ $$
 
 ### Orthogonal Form
 
-The Fast Reconstruction Form above means the encoding rules get a little bit uglier. You can also argue that the coefficients are less interpretable - before with L1 it was nice that $$c_0$$ was a simple average over the unit sphere, but that's no longer true. This could mean, for example, that if you were developing a game with options for high-quality and very low-quality global illumination using spherical harmonics, you could just use $$c_0$$ for the very low-quality version.
+The Fast Reconstruction Form above means the encoding rules get a little bit uglier. You can also argue that the coefficients are less interpretable - before with L1 it was nice that $$c_0$$ was a simple average over the unit sphere. This could mean, for example, that if you were developing a game with options for high-quality and very low-quality global illumination using spherical harmonics, you could just use $$c_0$$ for the very low-quality version. But that's no longer true.
 
 To address these problems, we're going to change our reconstruction function to keep all the terms *orthogonal*, which practically means they won't affect each other in encoding or convolution. This is a bit hand-wavey - it might be nice to work backwards here to derive these specific forms rather than presenting them immediately - but I wasn't sure if it would add much value to this post.
 
@@ -476,7 +478,7 @@ Now we can see that there is a comforting similarity between the encoding and re
 
 ## Bridging the Gap
 
-I want to highlight how this approach differs from the typical approach to spherical harmonics, and start to introduce the real mathematical definitions.
+We've pretty much derived SH approximations from scratch now, so I want to end by highlighting how this approach differs from the typical one, and start to introduce the real mathematical definitions.
 
 To recap here's our L1 reconstruction equation:
 
@@ -515,7 +517,7 @@ $$
 
 If you plug the encoding values into the reconstruction, remembering that $$ \int_\Omega f(\omega) \mathrm{d}\omega = 4 \pi \langle f(\omega) \rangle_\Omega$$, the terms cancel, and you end up with the same result.
 
-Now I want to specifically highlight the shared sub-terms between encoding and reconstruction, which we'll define as functions like this:
+You might notice that there are shared sub-terms in the encoding rules and reconstruction terms. We'll define functions for those like this:
 
 <div class="callout-box" markdown="1">
 <div class="callout-title">Spherical Harmonic Basis Functions</div>
@@ -531,7 +533,7 @@ $$
 
 </div>
 
-Coming back to the spherical harmonics vs. SH approximations, each one of these $$Y$$ functions is *a spherical harmonic*, and this is what spherical harmonics actually are: an infinite set of (basis) functions on a sphere. They are infinite because there are more basis functions for higher and higher degree polynomials. An SH approximation model is the linear combination (weighted sum) of a finite set of these basis functions.
+Coming back to the question of spherical harmonics vs. SH approximations, each one of these $$Y$$ functions is *a spherical harmonic*, and this is what the spherical harmonics actually are: an infinite set of (basis) functions on a sphere. They are infinite because there are more basis functions for higher and higher degree polynomials. An SH approximation model is the linear combination (weighted sum) of a finite set of these basis functions.
 
 The basis functions are unquestionably useful when generalizing to higher polynomials, and when doing mathematics with SH in general. And of course there is a real benefit of conforming to standard definitions and notation. But for approximations in graphics, I prefer the simpler reconstruction (even with the orthogonal form), and the purely rational coefficients in the encoding.
 
