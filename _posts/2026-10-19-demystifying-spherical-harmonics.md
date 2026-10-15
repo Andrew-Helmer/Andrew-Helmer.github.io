@@ -41,7 +41,7 @@ $$\hat{f}(\omega) = c_0 + c_x \omega_x + c_y \omega_y + c_z \omega_z$$
 
 Where we will precalculate and store our four coefficients: $$c_0, c_x, c_y, c_z$$. 
 
-It might be obvious that you can think of the $$c_0$$ term as an overall intensity, and the $$c_x, c_y, c_z$$ as a directional intensity, for a particular direction.
+It might be obvious that you can think of the $$c_0$$ term as an overall intensity, and the $$c_x, c_y, c_z$$ as a directional intensity, for a particular direction. And if the length of the $$<c_x, c_y, c_z>$$ vector is larger than $$c_0$$, you can get negative values (as shown in red here).
 
 <div id="sh-diagram-linear-approx" class="sh-diagram"></div>
 
