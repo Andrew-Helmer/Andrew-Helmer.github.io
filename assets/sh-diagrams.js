@@ -1641,6 +1641,373 @@
     }
   }
 
+  function initHemisphereBiasDiagram(container) {
+    const stage = document.createElement("div");
+    stage.className = "sh-diagram-stage";
+
+    const canvas = document.createElement("canvas");
+    canvas.className = "sh-diagram-canvas";
+    stage.appendChild(canvas);
+
+    const axesGizmo = createAxesSVG();
+    stage.appendChild(axesGizmo.svg);
+
+    const controls = document.createElement("div");
+    controls.className = "sh-diagram-controls";
+
+    const toggleGroup = document.createElement("div");
+    toggleGroup.className = "sh-segmented-toggle";
+    toggleGroup.setAttribute("role", "group");
+    toggleGroup.setAttribute("aria-label", "Hemispherical SH projection comparison");
+
+    const btnOrig = document.createElement("button");
+    btnOrig.type = "button";
+    btnOrig.className = "sh-toggle-btn active";
+    btnOrig.textContent = "Original";
+
+    const btnNaive = document.createElement("button");
+    btnNaive.type = "button";
+    btnNaive.className = "sh-toggle-btn";
+    btnNaive.textContent = "Naive";
+
+    const btnCorrect = document.createElement("button");
+    btnCorrect.type = "button";
+    btnCorrect.className = "sh-toggle-btn";
+    btnCorrect.textContent = "Correct";
+
+    toggleGroup.appendChild(btnOrig);
+    toggleGroup.appendChild(btnNaive);
+    toggleGroup.appendChild(btnCorrect);
+    controls.appendChild(toggleGroup);
+
+    container.innerHTML = "";
+    container.appendChild(stage);
+    container.appendChild(controls);
+
+    const gl = canvas.getContext("webgl2", {
+      alpha: true,
+      premultipliedAlpha: true,
+      antialias: true,
+      powerPreference: "low-power"
+    });
+
+    if (!gl) {
+      stage.innerHTML =
+        '<p class="sh-webgl-fallback">WebGL2 is required to view this interactive diagram.</p>';
+      return;
+    }
+
+    gl.getExtension("OES_texture_float_linear");
+
+    const vsSource = `#version 300 es
+    out vec2 vUV;
+    void main() {
+      vec2 pos = vec2((gl_VertexID << 1) & 2, gl_VertexID & 2);
+      vUV = pos;
+      gl_Position = vec4(pos * 2.0 - 1.0, 0.0, 1.0);
+    }`;
+
+    const fsSource = `#version 300 es
+    precision highp float;
+    in vec2 vUV;
+    out vec4 fragColor;
+
+    uniform sampler2D uEnvMap;
+    uniform vec2 uResolution;
+    uniform float uYaw;
+    uniform float uPitch;
+    uniform float uDist;
+    uniform int uViewMode; // 0 = Original, 1 = Naive, 2 = Correct
+    uniform vec4 uNaiveCoeffs;
+    uniform vec4 uCorrectCoeffs;
+
+    const float PI = 3.14159265358979323846;
+
+    vec2 dirToEquirectUV(vec3 dir) {
+      vec3 d = normalize(dir);
+      float phi = atan(d.z, d.x);
+      float theta = asin(clamp(d.y, -1.0, 1.0));
+      return vec2(phi / (2.0 * PI) + 0.5, 0.5 - theta / PI);
+    }
+
+    float sampleEquirectLum(vec3 dir) {
+      return textureLod(uEnvMap, dirToEquirectUV(dir), 0.0).r;
+    }
+
+    // Frostbite exponential ("Photographic") luma range compression
+    float rangeCompress(float x) {
+      return 1.0 - exp(-x);
+    }
+
+    float rangeCompress(float val, float threshold) {
+      float v1 = val;
+      float v2 = threshold + (1.0 - threshold) * rangeCompress((val - threshold) / (1.0 - threshold));
+      return val < threshold ? v1 : v2;
+    }
+
+    void main() {
+      vec2 ndc = vUV * 2.0 - 1.0;
+      float aspect = uResolution.x / uResolution.y;
+      ndc.x *= aspect;
+
+      const float tanFov = 0.40;
+
+      float cp = cos(uPitch), sp = sin(uPitch);
+      float cy = cos(uYaw),   sy = sin(uYaw);
+      vec3 camForward = normalize(vec3(-sy * cp, -sp, -cy * cp));
+      vec3 worldUp = vec3(0.0, 1.0, 0.0);
+      vec3 camRight = normalize(cross(camForward, worldUp));
+      vec3 camUp = cross(camRight, camForward);
+
+      // Center camera target slightly above y = 0 so the upper hemisphere sits centered in frame
+      vec3 target = vec3(0.0, 0.28, 0.0);
+      vec3 ro = target - camForward * uDist;
+      vec3 rd = normalize(camForward + ndc.x * tanFov * camRight + ndc.y * tanFov * camUp);
+
+      float b = dot(ro, rd);
+      float c = dot(ro, ro) - 1.0;
+      float h = b * b - c;
+
+      float distFromCenter = sqrt(max(0.0, 1.0 - h));
+      float pixelRadius = (2.0 * tanFov * uDist) / uResolution.y;
+      float sphereCoverage = 1.0 - smoothstep(1.0 - pixelRadius * 0.75, 1.0 + pixelRadius * 0.75, distFromCenter);
+
+      float clampedH = max(0.0, h);
+      float t = -b - sqrt(clampedH);
+      vec3 pos = ro + t * rd;
+
+      // Clip cleanly to the upper hemisphere (y >= 0) with analytical anti-aliasing along the equator
+      float hemiCut = smoothstep(-pixelRadius * 0.85, pixelRadius * 0.85, pos.y);
+      float coverage = sphereCoverage * hemiCut;
+
+      if (coverage <= 0.0) {
+        fragColor = vec4(0.0);
+        return;
+      }
+
+      vec3 n = normalize(pos);
+
+      float val;
+      if (uViewMode == 0) {
+        val = sampleEquirectLum(n);
+      } else if (uViewMode == 1) {
+        val = max(0.0, uNaiveCoeffs.x + dot(uNaiveCoeffs.yzw, n));
+      } else {
+        val = max(0.0, uCorrectCoeffs.x + dot(uCorrectCoeffs.yzw, n));
+      }
+
+      float mapped = rangeCompress(val, 0.25);
+      float ldr = pow(clamp(mapped, 0.0, 1.0), 1.0 / 2.2);
+      fragColor = vec4(vec3(ldr) * coverage, coverage);
+    }`;
+
+    function compileShader(type, src) {
+      const s = gl.createShader(type);
+      gl.shaderSource(s, src);
+      gl.compileShader(s);
+      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+        console.error(gl.getShaderInfoLog(s));
+      }
+      return s;
+    }
+
+    const prog = gl.createProgram();
+    gl.attachShader(prog, compileShader(gl.VERTEX_SHADER, vsSource));
+    gl.attachShader(prog, compileShader(gl.FRAGMENT_SHADER, fsSource));
+    gl.linkProgram(prog);
+
+    const vao = gl.createVertexArray();
+    const uLocs = {
+      envMap: gl.getUniformLocation(prog, "uEnvMap"),
+      resolution: gl.getUniformLocation(prog, "uResolution"),
+      yaw: gl.getUniformLocation(prog, "uYaw"),
+      pitch: gl.getUniformLocation(prog, "uPitch"),
+      dist: gl.getUniformLocation(prog, "uDist"),
+      viewMode: gl.getUniformLocation(prog, "uViewMode"),
+      naiveCoeffs: gl.getUniformLocation(prog, "uNaiveCoeffs"),
+      correctCoeffs: gl.getUniformLocation(prog, "uCorrectCoeffs")
+    };
+
+    const NAIVE_HEMI_COEFFS = [0.55022844, 0.12086697, 0.84153717, -0.05282664];
+    const CORRECT_HEMI_COEFFS = [0.51783946, 0.12086702, 0.06477798, -0.05282663];
+
+    // Look down on the upper hemisphere by default
+    const DEFAULT_YAW = 0.38;
+    const DEFAULT_PITCH = 0.52;
+    let envTexture = null;
+    let yaw = DEFAULT_YAW;
+    let pitch = DEFAULT_PITCH;
+    const dist = 2.85;
+    let viewMode = 0; // 0 = Original, 1 = Naive, 2 = Correct
+    let isVisible = false;
+    let rafId = null;
+
+    axesGizmo.update(yaw, pitch);
+
+    function renderFrame() {
+      rafId = null;
+      if (!isVisible || !envTexture) return;
+
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const rect = stage.getBoundingClientRect();
+      const w = Math.max(1, Math.round(rect.width * dpr));
+      const h = Math.max(1, Math.round(rect.height * dpr));
+
+      if (canvas.width !== w || canvas.height !== h) {
+        canvas.width = w;
+        canvas.height = h;
+      }
+
+      gl.viewport(0, 0, w, h);
+      gl.clearColor(0.0, 0.0, 0.0, 0.0);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+
+      gl.useProgram(prog);
+      gl.bindVertexArray(vao);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, envTexture);
+
+      gl.uniform1i(uLocs.envMap, 0);
+      gl.uniform2f(uLocs.resolution, w, h);
+      gl.uniform1f(uLocs.yaw, yaw);
+      gl.uniform1f(uLocs.pitch, pitch);
+      gl.uniform1f(uLocs.dist, dist);
+      gl.uniform1i(uLocs.viewMode, viewMode);
+      gl.uniform4f(
+        uLocs.naiveCoeffs,
+        NAIVE_HEMI_COEFFS[0],
+        NAIVE_HEMI_COEFFS[1],
+        NAIVE_HEMI_COEFFS[2],
+        NAIVE_HEMI_COEFFS[3]
+      );
+      gl.uniform4f(
+        uLocs.correctCoeffs,
+        CORRECT_HEMI_COEFFS[0],
+        CORRECT_HEMI_COEFFS[1],
+        CORRECT_HEMI_COEFFS[2],
+        CORRECT_HEMI_COEFFS[3]
+      );
+
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+    }
+
+    function requestRender() {
+      if (rafId === null && isVisible && envTexture) {
+        rafId = requestAnimationFrame(renderFrame);
+      }
+    }
+
+    loadPantheonHDR()
+      .then((hdr) => {
+        const t = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, t);
+        gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+        gl.texImage2D(
+          gl.TEXTURE_2D,
+          0,
+          gl.R16F,
+          hdr.width,
+          hdr.height,
+          0,
+          gl.RED,
+          gl.FLOAT,
+          hdr.data
+        );
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        envTexture = t;
+        requestRender();
+      })
+      .catch((err) => {
+        console.error("Error loading HDR light probe:", err);
+      });
+
+    let dragging = false;
+    let lastX = 0;
+    let lastY = 0;
+
+    canvas.addEventListener("pointerdown", (e) => {
+      if (e.button !== 0 && e.pointerType === "mouse") return;
+      dragging = true;
+      lastX = e.clientX;
+      lastY = e.clientY;
+      canvas.setPointerCapture(e.pointerId);
+    });
+
+    canvas.addEventListener("pointermove", (e) => {
+      if (!dragging) return;
+      const dx = e.clientX - lastX;
+      const dy = e.clientY - lastY;
+      lastX = e.clientX;
+      lastY = e.clientY;
+
+      yaw -= dx * 0.007;
+      // Keep camera at or above the equatorial plane so we always view the upper hemisphere dome
+      pitch = Math.max(0.02, Math.min(1.45, pitch + dy * 0.007));
+
+      axesGizmo.update(yaw, pitch);
+      requestRender();
+    });
+
+    function endDrag(e) {
+      if (!dragging) return;
+      dragging = false;
+      if (e && e.pointerId !== undefined && canvas.hasPointerCapture(e.pointerId)) {
+        canvas.releasePointerCapture(e.pointerId);
+      }
+    }
+
+    canvas.addEventListener("pointerup", endDrag);
+    canvas.addEventListener("pointercancel", endDrag);
+
+    canvas.addEventListener("dblclick", () => {
+      yaw = DEFAULT_YAW;
+      pitch = DEFAULT_PITCH;
+      axesGizmo.update(yaw, pitch);
+      requestRender();
+    });
+
+    function setViewMode(mode) {
+      if (viewMode === mode) return;
+      viewMode = mode;
+      btnOrig.classList.toggle("active", mode === 0);
+      btnNaive.classList.toggle("active", mode === 1);
+      btnCorrect.classList.toggle("active", mode === 2);
+      requestRender();
+    }
+
+    btnOrig.addEventListener("click", () => setViewMode(0));
+    btnNaive.addEventListener("click", () => setViewMode(1));
+    btnCorrect.addEventListener("click", () => setViewMode(2));
+
+    if ("IntersectionObserver" in window) {
+      const io = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            isVisible = entry.isIntersecting;
+            if (isVisible) requestRender();
+          }
+        },
+        { threshold: 0.01 }
+      );
+      io.observe(container);
+    } else {
+      isVisible = true;
+      requestRender();
+    }
+
+    if ("ResizeObserver" in window) {
+      const ro = new ResizeObserver(() => {
+        requestRender();
+      });
+      ro.observe(stage);
+    } else {
+      window.addEventListener("resize", requestRender, { passive: true });
+    }
+  }
+
   function initAllDiagrams() {
     const el1 = document.getElementById("sh-diagram-reflective-sphere");
     if (el1) initReflectiveSphereDiagram(el1);
@@ -1653,6 +2020,9 @@
 
     const el4 = document.getElementById("sh-diagram-clamped-directional");
     if (el4) initClampedDirectionalDiagram(el4);
+
+    const el5 = document.getElementById("sh-diagram-hemisphere-bias");
+    if (el5) initHemisphereBiasDiagram(el5);
   }
 
   if (document.readyState === "loading") {

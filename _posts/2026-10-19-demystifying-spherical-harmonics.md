@@ -247,8 +247,7 @@ It's also generally the case that least squares error is rarely ideal for graphi
 
 Finally, many people make the mistake of using standard or naive SH projection when your incoming light distribution is actually a hemisphere, for example when storing directional lightmaps. This can actually lead to meaningful bias, ending up too bright even for a completely flat surface where we should be matching non-directional lightmaps.
 
-TODO: diagram showing bias of hemispherical lighting
-{: todo}
+<div id="sh-diagram-hemisphere-bias" class="sh-diagram"></div>
 
 In practice, these may or may not be important problems in your application, but I have seen significant improvements to visual quality by addressing them.
 
