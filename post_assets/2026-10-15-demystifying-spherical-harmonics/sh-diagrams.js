@@ -1769,19 +1769,19 @@
       // 1. Flat square in the y = 0 plane: [-S, S] x {0} x [-S, S], normal = (0, 1, 0)
       float squareCoverage = 0.0;
       vec3 squareCol = vec3(0.0);
-      if (rd.y < -1e-4) {
-        float tPlane = -ro.y / rd.y;
-        if (tPlane > 0.0) {
-          vec3 posP = ro + tPlane * rd;
-          vec2 dBox = abs(posP.xz) - vec2(S);
-          float sdSquare = length(max(dBox, 0.0)) + min(max(dBox.x, dBox.y), 0.0);
-          float aaSquare = max(fwidth(sdSquare) * 0.75, pixelRadius * 0.75);
-          squareCoverage = 1.0 - smoothstep(-aaSquare, aaSquare, sdSquare);
+      float safeRdY = (abs(rd.y) < 1e-5) ? -1e-5 : rd.y;
+      float tPlane = -ro.y / safeRdY;
+      vec3 posP = ro + clamp(tPlane, 0.0, 50.0) * rd;
+      vec2 dBox = abs(posP.xz) - vec2(S);
+      float sdSquare = length(max(dBox, 0.0)) + min(max(dBox.x, dBox.y), 0.0);
+      float fwSquare = fwidth(sdSquare);
+      if (rd.y < -1e-4 && tPlane > 0.0) {
+        float aaSquare = max(fwSquare * 0.75, pixelRadius * 0.75);
+        squareCoverage = 1.0 - smoothstep(-aaSquare, aaSquare, sdSquare);
 
-          float valP = evalSH(vec3(0.0, 1.0, 0.0));
-          float ldrP = pow(clamp(valP, 0.0, 1.0), 1.0 / 2.2);
-          squareCol = vec3(ldrP);
-        }
+        float valP = evalSH(vec3(0.0, 1.0, 0.0));
+        float ldrP = pow(clamp(valP, 0.0, 1.0), 1.0 / 2.2);
+        squareCol = vec3(ldrP);
       }
 
       // 2. Upper hemisphere of radius R sitting at the center of the square (y >= 0)
