@@ -184,7 +184,7 @@ Since a sphere is symmetrical for all the three axes, the averages are all the s
 
 $$c_x = 3 \langle f(\omega) \, \omega_x \rangle_\Omega$$
 
-Now you start to get a sense for why this is called "projection". It looks like projecting the function onto the $$\omega_x$$ value, with a scale. This will be fleshed out a little more later.
+Now you start to get a sense for why this is called "projection". It looks like projecting the function onto the $$\omega_x$$ value, with a scale.
 
 ### L1 Encoding Rules
 
@@ -232,7 +232,7 @@ Now that we've derived the fast encoding, let's reconsider some important assump
 
 Typical applications of spherical harmonics in graphics violate at least one of these assumptions, sometimes two, often all three. Even when the assumptions are violated, spherical harmonics are still usually pretty good \*in practice\*, but sometimes the issues can be significant.
 
-The first assumption might seem comically obvious - of course the encoding only works for the reconstruction function that it was derived with\! But virtually all SH implementations in graphics violate it. For one thing, there are improvements to spherical harmonics that use different forms of reconstruction, ie completely different models. Like the ZH3 hallucination, or the Geomerics reconstruction (this also includes a convolution).
+The first assumption might seem comically obvious - of course the encoding only works for the reconstruction function that it was derived with\! But virtually all SH implementations in graphics violate it. For one thing, there are improvements to spherical harmonics that use different forms of reconstruction, i.e. completely different models. Like the ZH3 hallucination, or the Geomerics reconstruction (this also includes a convolution).
 
 But even the most vanilla implementations of SH almost always add a clamp to prevent negative lighting values:
 
@@ -524,7 +524,7 @@ $$
 
 Coming back to the spherical harmonics vs. SH approximations, each one of these $$Y$$ functions is *a spherical harmonic*, and this is what spherical harmonics actually are: an infinite set of (basis) functions on a sphere. They are infinite becaue there are more basis functions for higher and higher degree polynomials. An SH approximation model is the linear combination (weighted sum) of a finite set of these basis functions.
 
-The basis functions are unquestionably useful when generalizing to higher polynomials, and when doing mathematics with SH in general. And of course there is a real benefit of conforming to standard definitions and notation. But for approximations, I personally find that the pi's, square roots, and more complicated fractions are a bit less elegant. As a programmer, if SH notations and definitions didn't already exist, and someone started with the L1 FRF and then tried to "factor out" the common terms between encoding and reconstruction, I would say this is a situation where factoring out the common code makes it harder to read!
+The basis functions are unquestionably useful when generalizing to higher polynomials, and when doing mathematics with SH in general. And of course there is a real benefit of conforming to standard definitions and notation. But for approximations, I personally find that the pi's, square roots, and more complicated fractions are a bit less elegant, and not worth the commonality of the basis functions. I prefer the simpler reconstruction (even of my orthogonal form), and the rational coefficients in the encoding.
 
 Additionally, I can't recall if any "Introduction to SH" I've read mentions that SH is a least-squares solution, though it's mentioned and proved in [Stupid Spherical Harmonics (SH) Tricks](https://www.ppsloan.org/publications/StupidSH36.pdf) by Peter-Pike Sloan. I find that this is quite a nice way to reinvent SH from principles that more engineers already know, and it illuminates that a naive application of SH can lead to bias and other errors.
 
