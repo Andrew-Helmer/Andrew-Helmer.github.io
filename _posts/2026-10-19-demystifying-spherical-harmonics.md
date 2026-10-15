@@ -245,7 +245,7 @@ For a single point light source, we can \*perfectly\* represent the Lambertian r
 
 It's also generally the case that least squares error is rarely ideal for graphics applications. A relative error is usually better, and there are even better perceptual error metrics depending on what you know about your scene.
 
-Finally, many people make the mistake of using standard or naive SH projection when your incoming light distribution is actually a hemisphere, for example when storing directional lightmaps. This can actually lead to meaningful bias, ending up too bright even for a completely flat surface where we should be matching non-directional lightmaps.
+Finally, many people make the mistake of using standard or naive SH projection when your incoming light distribution is actually a hemisphere, for example when generating directional lightmaps. This can actually lead to meaningful bias, ending up too bright even for a completely flat surface where we should be matching non-directional lightmaps.
 
 <div id="sh-diagram-hemisphere-bias" class="sh-diagram"></div>
 
