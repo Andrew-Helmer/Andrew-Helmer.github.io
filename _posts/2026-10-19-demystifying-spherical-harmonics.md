@@ -21,8 +21,8 @@ So let's start with the engineering problem. We have a whole bunch of values tha
 
 This visualization is a simple example of what this function might look like. You can see the spherical directions from the surface normal, or view the incoming light via a reflection (bounced rays) in a chrome ball.
 
-TODO: interactive diagram of a simple reflective sphere
-{: todo}
+<div id="sh-diagram-reflective-sphere" class="sh-diagram"></div>
+<script defer src="{{ site.baseurl }}/assets/sh-diagrams.js"></script>
 
 For a given direction, calculating the value is expensive. It could mean ray-tracing, path-tracing, or rasterizing a pixel. In something like a game, you typically don't want to do this with every point that you want to shade. Alternatively, you can pre-render a high resolution version of the spherical function, possibly storing in a cubemap or octahedral map. But this requires a lot of memory for many points in space.
 

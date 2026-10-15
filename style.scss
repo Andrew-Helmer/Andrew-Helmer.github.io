@@ -347,6 +347,103 @@ footer {
 }
 
 
+.sh-diagram {
+  margin: 28px auto;
+  max-width: 440px;
+  width: 100%;
+  user-select: none;
+  -webkit-user-select: none;
+
+  .sh-diagram-stage {
+    position: relative;
+    width: 100%;
+    height: 320px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    @include mobile {
+      height: 270px;
+    }
+  }
+
+  .sh-diagram-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    cursor: grab;
+    touch-action: none;
+
+    &:active {
+      cursor: grabbing;
+    }
+  }
+
+  .sh-axes-gizmo {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    width: 66px;
+    height: 66px;
+    pointer-events: none;
+    overflow: visible;
+
+    .sh-axis-label {
+      font-family: $georgia;
+      font-style: italic;
+      font-size: 11px;
+    }
+  }
+
+  .sh-diagram-controls {
+    display: flex;
+    justify-content: center;
+    margin-top: 6px;
+  }
+
+  .sh-segmented-toggle {
+    display: inline-flex;
+    background-color: #161616;
+    border: 1px solid $border;
+    border-radius: 6px;
+    padding: 3px;
+    gap: 2px;
+  }
+
+  .sh-toggle-btn {
+    appearance: none;
+    -webkit-appearance: none;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    color: $muted;
+    font-family: $helveticaNeue;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.2px;
+    padding: 5px 14px;
+    cursor: pointer;
+    transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+
+    &:hover {
+      color: $text;
+    }
+
+    &.active {
+      background-color: #2a2a2d;
+      border-color: #4a4a4f;
+      color: $heading;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+    }
+  }
+
+  .sh-webgl-fallback {
+    color: $muted;
+    font-size: 14px;
+    text-align: center;
+  }
+}
+
 // Settled on moving the import of syntax highlighting to the bottom of the CSS
 // ... Otherwise it really bloats up the top of the CSS file and makes it difficult to find the start
 @import "highlights";
