@@ -510,6 +510,9 @@ If you plug the encoding values into the reconstruction, remembering that $$ \in
 
 Now I want to specifically highlight the shared sub-terms between encoding and reconstruction, which we'll define as functions like this:
 
+<div class="callout-box" markdown="1">
+<div class="callout-title">Spherical Harmonic Basis Functions</div>
+
 $$
 \begin{alignedat}{2}
 &Y_{0,0}(\omega) &&{}= \frac{1}{2\sqrt{\pi}} \\
@@ -518,6 +521,8 @@ $$
 &Y_{1,1}(\omega) &&{}= \frac{\sqrt{3}}{2\sqrt{\pi}} \omega_x
 \end{alignedat}
 $$
+
+</div>
 
 Coming back to the spherical harmonics vs. SH approximations, each one of these $$Y$$ functions is *a spherical harmonic*, and this is what spherical harmonics actually are: an infinite set of (basis) functions on a sphere. They are infinite becaue there are more basis functions for higher and higher degree polynomials. An SH approximation model is the linear combination (weighted sum) of a finite set of these basis functions.
 
