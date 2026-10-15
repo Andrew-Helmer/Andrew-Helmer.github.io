@@ -4,6 +4,7 @@
   const HDR_WEBP_URL = "/assets/pantheon-hdr.webp";
   const LOG_EPS = 0.002;
   const LOG_MAX_LUM = 8.03125;
+  const HDR_EXPOSURE_SCALE = 0.5; // -2 stops (2^-2)
   let hdrPromise = null;
 
   function loadPantheonHDR() {
@@ -27,7 +28,9 @@
           const lut = new Float32Array(256);
           for (let i = 1; i < 256; i++) {
             const t = i / 255.0;
-            lut[i] = Math.max(0.0, Math.pow(2.0, lo + t * (hi - lo)) - LOG_EPS);
+            lut[i] =
+              Math.max(0.0, Math.pow(2.0, lo + t * (hi - lo)) - LOG_EPS) *
+              HDR_EXPOSURE_SCALE;
           }
 
           const numPixels = width * height;
