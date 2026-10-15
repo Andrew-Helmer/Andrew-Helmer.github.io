@@ -228,7 +228,7 @@ For a long time I found spherical harmonics a bit scary. Personally, derived thi
 
 Now that we've derived the fast encoding, let's reconsider some important assumptions we had to make for this fast encoding to be the least-squares solution.
 
-1. Our reconstruction function is $$\hat{f}(\omega_x, \omega_y, \omega_z) = c_0 + c_x \omega_x + c_y \omega_y + c_z \omega_z$$  
+1. Our reconstruction function is $$\hat{f}(\omega) = c_0 + c_x \omega_x + c_y \omega_y + c_z \omega_z$$  
 1. We want to minimize least squares error, not some other error.  
 1. Our function or optimization domain is uniformly distributed around the unit sphere, in all directions.
 
@@ -537,7 +537,7 @@ Now, if this is your first introduction to SH, and you want to bridge the gap fu
 
 After reading that nicebyte article, I also recommend Graham Hazel's [Alternative Definition of Spherical Harmonics for Lighting](https://grahamhazel.com/blog/2017/12/18/alternative-definition-of-spherical-harmonics-for-lighting/). Hazel also defines SH on a sphere with surface area 1, which is really the same as using the average over the sphere instead of the integral.
 
-Finally, this is not directly related to SH, but I definitely want to highlight all of Bartosz Ciechanowski's amazing blog, and particularly his post [Lights and Shadows](https://ciechanow.ski/lights-and-shadows/). That was a strong inspiration for the interactive diagrams in this post
+Finally, this is not directly related to SH, but I definitely want to highlight all of Bartosz Ciechanowski's amazing blog, and particularly his post [Lights and Shadows](https://ciechanow.ski/lights-and-shadows/). That was a strong inspiration for the interactive diagrams in this post.
 
 ## AI Disclaimer
 
