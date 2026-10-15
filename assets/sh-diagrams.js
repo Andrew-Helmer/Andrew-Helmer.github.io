@@ -922,12 +922,375 @@
     }
   }
 
+  function initPantheonFitDiagram(container) {
+    const stage = document.createElement("div");
+    stage.className = "sh-diagram-stage";
+
+    const canvas = document.createElement("canvas");
+    canvas.className = "sh-diagram-canvas";
+    stage.appendChild(canvas);
+
+    const axesGizmo = createAxesSVG();
+    stage.appendChild(axesGizmo.svg);
+
+    const controls = document.createElement("div");
+    controls.className = "sh-diagram-controls";
+
+    const toggleGroup = document.createElement("div");
+    toggleGroup.className = "sh-segmented-toggle";
+    toggleGroup.setAttribute("role", "group");
+    toggleGroup.setAttribute("aria-label", "Spherical harmonics comparison view");
+
+    const btnProj = document.createElement("button");
+    btnProj.type = "button";
+    btnProj.className = "sh-toggle-btn active";
+    btnProj.textContent = "Original";
+
+    const btnSH = document.createElement("button");
+    btnSH.type = "button";
+    btnSH.className = "sh-toggle-btn";
+    btnSH.textContent = "Approximation";
+
+    const btnErr = document.createElement("button");
+    btnErr.type = "button";
+    btnErr.className = "sh-toggle-btn";
+    btnErr.textContent = "Error";
+
+    toggleGroup.appendChild(btnProj);
+    toggleGroup.appendChild(btnSH);
+    toggleGroup.appendChild(btnErr);
+    controls.appendChild(toggleGroup);
+
+    container.innerHTML = "";
+    container.appendChild(stage);
+    container.appendChild(controls);
+
+    const gl = canvas.getContext("webgl2", {
+      alpha: true,
+      premultipliedAlpha: true,
+      antialias: true,
+      powerPreference: "low-power"
+    });
+
+    if (!gl) {
+      stage.innerHTML =
+        '<p class="sh-webgl-fallback">WebGL2 is required to view this interactive diagram.</p>';
+      return;
+    }
+
+    gl.getExtension("OES_texture_float_linear");
+
+    const vsSource = `#version 300 es
+    out vec2 vUV;
+    void main() {
+      vec2 pos = vec2((gl_VertexID << 1) & 2, gl_VertexID & 2);
+      vUV = pos;
+      gl_Position = vec4(pos * 2.0 - 1.0, 0.0, 1.0);
+    }`;
+
+    const fsSource = `#version 300 es
+    precision highp float;
+    in vec2 vUV;
+    out vec4 fragColor;
+
+    uniform sampler2D uEnvMap;
+    uniform vec2 uResolution;
+    uniform float uYaw;
+    uniform float uPitch;
+    uniform float uDist;
+    uniform int uViewMode; // 0 = Spherical Projection, 1 = SH Approximation, 2 = Absolute Error
+    uniform vec4 uCoeffs;  // (c0, cx, cy, cz)
+
+    const float PI = 3.14159265358979323846;
+
+    vec2 dirToEquirectUV(vec3 dir) {
+      vec3 d = normalize(dir);
+      float phi = atan(d.z, d.x);
+      float theta = asin(clamp(d.y, -1.0, 1.0));
+      return vec2(phi / (2.0 * PI) + 0.5, 0.5 - theta / PI);
+    }
+
+    float sampleEquirectLum(vec3 dir) {
+      return textureLod(uEnvMap, dirToEquirectUV(dir), 0.0).r;
+    }
+
+    // Frostbite exponential ("Photographic") luma range compression
+    float rangeCompress(float x) {
+      return 1.0 - exp(-x);
+    }
+
+    float rangeCompress(float val, float threshold) {
+      float v1 = val;
+      float v2 = threshold + (1.0 - threshold) * rangeCompress((val - threshold) / (1.0 - threshold));
+      return val < threshold ? v1 : v2;
+    }
+
+    void main() {
+      vec2 ndc = vUV * 2.0 - 1.0;
+      float aspect = uResolution.x / uResolution.y;
+      ndc.x *= aspect;
+
+      const float tanFov = 0.40;
+
+      float cp = cos(uPitch), sp = sin(uPitch);
+      float cy = cos(uYaw),   sy = sin(uYaw);
+      vec3 camForward = normalize(vec3(-sy * cp, -sp, -cy * cp));
+      vec3 worldUp = vec3(0.0, 1.0, 0.0);
+      vec3 camRight = normalize(cross(camForward, worldUp));
+      vec3 camUp = cross(camRight, camForward);
+
+      vec3 ro = -camForward * uDist;
+      vec3 rd = normalize(camForward + ndc.x * tanFov * camRight + ndc.y * tanFov * camUp);
+
+      float b = dot(ro, rd);
+      float c = dot(ro, ro) - 1.0;
+      float h = b * b - c;
+
+      float distFromCenter = sqrt(max(0.0, 1.0 - h));
+      float pixelRadius = (2.0 * tanFov * uDist) / uResolution.y;
+      float coverage = 1.0 - smoothstep(1.0 - pixelRadius * 0.75, 1.0 + pixelRadius * 0.75, distFromCenter);
+
+      if (coverage <= 0.0) {
+        fragColor = vec4(0.0);
+        return;
+      }
+
+      float clampedH = max(0.0, h);
+      float t = -b - sqrt(clampedH);
+      vec3 pos = ro + t * rd;
+      vec3 n = normalize(pos);
+
+      float rawLum = sampleEquirectLum(n);
+      float shRaw = uCoeffs.x + dot(uCoeffs.yzw, n);
+
+      vec3 col;
+      if (uViewMode == 0) {
+        // Pure spherical projection (no Lambertian shading)
+        float mapped = rangeCompress(rawLum, 0.25);
+        float ldr = pow(clamp(mapped, 0.0, 1.0), 1.0 / 2.2);
+        col = vec3(ldr);
+      } else if (uViewMode == 1) {
+        // L1 SH approximation with negative values clamped to black
+        float mapped = rangeCompress(max(0.0, shRaw), 0.25);
+        float ldr = pow(clamp(mapped, 0.0, 1.0), 1.0 / 2.2);
+        col = vec3(ldr);
+      } else {
+        // Absolute error |f(w) - f_hat(w)| compressed with Frostbite rangeCompress -> red
+        float absErr = abs(rawLum - shRaw);
+        float mapped = rangeCompress(absErr, 0.25);
+        float ldr = pow(clamp(mapped, 0.0, 1.0), 1.0 / 2.2);
+        col = vec3(ldr, ldr * 0.16, ldr * 0.12);
+      }
+
+      fragColor = vec4(col * coverage, coverage);
+    }`;
+
+    function compileShader(type, src) {
+      const s = gl.createShader(type);
+      gl.shaderSource(s, src);
+      gl.compileShader(s);
+      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+        console.error(gl.getShaderInfoLog(s));
+      }
+      return s;
+    }
+
+    const prog = gl.createProgram();
+    gl.attachShader(prog, compileShader(gl.VERTEX_SHADER, vsSource));
+    gl.attachShader(prog, compileShader(gl.FRAGMENT_SHADER, fsSource));
+    gl.linkProgram(prog);
+
+    const vao = gl.createVertexArray();
+    const uLocs = {
+      envMap: gl.getUniformLocation(prog, "uEnvMap"),
+      resolution: gl.getUniformLocation(prog, "uResolution"),
+      yaw: gl.getUniformLocation(prog, "uYaw"),
+      pitch: gl.getUniformLocation(prog, "uPitch"),
+      dist: gl.getUniformLocation(prog, "uDist"),
+      viewMode: gl.getUniformLocation(prog, "uViewMode"),
+      coeffs: gl.getUniformLocation(prog, "uCoeffs")
+    };
+
+    // Precomputed exact L1 SH projection of the Pantheon HDR probe
+    const PANTHEON_L1_COEFFS = [0.317151, 0.064818, 0.355999, -0.029964];
+
+    const DEFAULT_YAW = 0.38;
+    const DEFAULT_PITCH = 0.32;
+    let envTexture = null;
+    let yaw = DEFAULT_YAW;
+    let pitch = DEFAULT_PITCH;
+    const dist = 2.85;
+    let viewMode = 0; // 0 = Spherical Projection, 1 = SH Approximation, 2 = Absolute Error
+    let isVisible = false;
+    let rafId = null;
+
+    axesGizmo.update(yaw, pitch);
+
+    function renderFrame() {
+      rafId = null;
+      if (!isVisible || !envTexture) return;
+
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const rect = stage.getBoundingClientRect();
+      const w = Math.max(1, Math.round(rect.width * dpr));
+      const h = Math.max(1, Math.round(rect.height * dpr));
+
+      if (canvas.width !== w || canvas.height !== h) {
+        canvas.width = w;
+        canvas.height = h;
+      }
+
+      gl.viewport(0, 0, w, h);
+      gl.clearColor(0.0, 0.0, 0.0, 0.0);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+
+      gl.useProgram(prog);
+      gl.bindVertexArray(vao);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, envTexture);
+
+      gl.uniform1i(uLocs.envMap, 0);
+      gl.uniform2f(uLocs.resolution, w, h);
+      gl.uniform1f(uLocs.yaw, yaw);
+      gl.uniform1f(uLocs.pitch, pitch);
+      gl.uniform1f(uLocs.dist, dist);
+      gl.uniform1i(uLocs.viewMode, viewMode);
+      gl.uniform4f(
+        uLocs.coeffs,
+        PANTHEON_L1_COEFFS[0],
+        PANTHEON_L1_COEFFS[1],
+        PANTHEON_L1_COEFFS[2],
+        PANTHEON_L1_COEFFS[3]
+      );
+
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+    }
+
+    function requestRender() {
+      if (rafId === null && isVisible && envTexture) {
+        rafId = requestAnimationFrame(renderFrame);
+      }
+    }
+
+    loadPantheonHDR()
+      .then((hdr) => {
+        const t = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, t);
+        gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+        gl.texImage2D(
+          gl.TEXTURE_2D,
+          0,
+          gl.R16F,
+          hdr.width,
+          hdr.height,
+          0,
+          gl.RED,
+          gl.FLOAT,
+          hdr.data
+        );
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        envTexture = t;
+        requestRender();
+      })
+      .catch((err) => {
+        console.error("Error loading HDR light probe:", err);
+      });
+
+    let dragging = false;
+    let lastX = 0;
+    let lastY = 0;
+
+    canvas.addEventListener("pointerdown", (e) => {
+      if (e.button !== 0 && e.pointerType === "mouse") return;
+      dragging = true;
+      lastX = e.clientX;
+      lastY = e.clientY;
+      canvas.setPointerCapture(e.pointerId);
+    });
+
+    canvas.addEventListener("pointermove", (e) => {
+      if (!dragging) return;
+      const dx = e.clientX - lastX;
+      const dy = e.clientY - lastY;
+      lastX = e.clientX;
+      lastY = e.clientY;
+
+      yaw -= dx * 0.007;
+      pitch = Math.max(-1.45, Math.min(1.45, pitch + dy * 0.007));
+
+      axesGizmo.update(yaw, pitch);
+      requestRender();
+    });
+
+    function endDrag(e) {
+      if (!dragging) return;
+      dragging = false;
+      if (e && e.pointerId !== undefined && canvas.hasPointerCapture(e.pointerId)) {
+        canvas.releasePointerCapture(e.pointerId);
+      }
+    }
+
+    canvas.addEventListener("pointerup", endDrag);
+    canvas.addEventListener("pointercancel", endDrag);
+
+    canvas.addEventListener("dblclick", () => {
+      yaw = DEFAULT_YAW;
+      pitch = DEFAULT_PITCH;
+      axesGizmo.update(yaw, pitch);
+      requestRender();
+    });
+
+    function setViewMode(mode) {
+      if (viewMode === mode) return;
+      viewMode = mode;
+      btnProj.classList.toggle("active", mode === 0);
+      btnSH.classList.toggle("active", mode === 1);
+      btnErr.classList.toggle("active", mode === 2);
+      requestRender();
+    }
+
+    btnProj.addEventListener("click", () => setViewMode(0));
+    btnSH.addEventListener("click", () => setViewMode(1));
+    btnErr.addEventListener("click", () => setViewMode(2));
+
+    if ("IntersectionObserver" in window) {
+      const io = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            isVisible = entry.isIntersecting;
+            if (isVisible) requestRender();
+          }
+        },
+        { threshold: 0.01 }
+      );
+      io.observe(container);
+    } else {
+      isVisible = true;
+      requestRender();
+    }
+
+    if ("ResizeObserver" in window) {
+      const ro = new ResizeObserver(() => {
+        requestRender();
+      });
+      ro.observe(stage);
+    } else {
+      window.addEventListener("resize", requestRender, { passive: true });
+    }
+  }
+
   function initAllDiagrams() {
     const el1 = document.getElementById("sh-diagram-reflective-sphere");
     if (el1) initReflectiveSphereDiagram(el1);
 
     const el2 = document.getElementById("sh-diagram-linear-approx");
     if (el2) initLinearApproxDiagram(el2);
+
+    const el3 = document.getElementById("sh-diagram-pantheon-fit");
+    if (el3) initPantheonFitDiagram(el3);
   }
 
   if (document.readyState === "loading") {

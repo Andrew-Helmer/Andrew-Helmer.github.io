@@ -65,8 +65,7 @@ def encode_linear_coefficients(spherical_fn, num_dirs=8192, seed=None):
 
 These coefficients gives us a pretty simple spherical approximation.
 
-TODO: interactive diagram of sphere with spherical projection of original image, vs. linear model, with coefficients that can be manipulated or "reset"
-{: todo}
+<div id="sh-diagram-pantheon-fit" class="sh-diagram"></div>
 
 Well, we pretty much just reinvented spherical harmonic approximations\! Yup, really. This is most likely something countless people have done without even realizing that what they did was equivalent to using SH.
 
