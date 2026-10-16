@@ -2011,6 +2011,286 @@
     }
   }
 
+  function initClamped2DDiagram(container) {
+    const svgNS = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(svgNS, "svg");
+    svg.setAttribute("class", "diagram-svg");
+    svg.setAttribute("viewBox", "0 -4 420 266");
+    svg.setAttribute("role", "img");
+    svg.setAttribute(
+      "aria-label",
+      "2D plot comparing f(x) = x^4 with a Naive Fit, Naive Clamped, and Optimal Clamped"
+    );
+
+    // Coordinate mapping:
+    // x in [0, 1] -> [x0, x0 + plotW] = [26, 370] (width = 344)
+    // y in [0, 1] -> [y0, y0 - plotH] = [206, 26] (height = 180)
+    const x0 = 26;
+    const y0 = 206;
+    const plotW = 344;
+    const plotH = 180;
+
+    function sx(x) {
+      return (x0 + x * plotW).toFixed(2);
+    }
+    function sy(y) {
+      return (y0 - y * plotH).toFixed(2);
+    }
+
+    // Axes lines (purely positive domain with arrows for x and y)
+    const axisColor = "#68686e";
+    const labelColor = "#b8b8be";
+
+    // Subtle negative-y dashed extension to give visual context when Naive Fit dips below 0
+    const negYAxis = document.createElementNS(svgNS, "line");
+    negYAxis.setAttribute("x1", sx(0));
+    negYAxis.setAttribute("y1", sy(0));
+    negYAxis.setAttribute("x2", sx(0));
+    negYAxis.setAttribute("y2", sy(-0.24));
+    negYAxis.setAttribute("stroke", "#424246");
+    negYAxis.setAttribute("stroke-width", "1.2");
+    negYAxis.setAttribute("stroke-dasharray", "3 3");
+    svg.appendChild(negYAxis);
+
+    // X axis: (0,0) to xEnd, with arrow pointing directly at the "x" label
+    const xEnd = 386;
+    const xAxis = document.createElementNS(svgNS, "line");
+    xAxis.setAttribute("x1", sx(0));
+    xAxis.setAttribute("y1", sy(0));
+    xAxis.setAttribute("x2", String(xEnd));
+    xAxis.setAttribute("y2", sy(0));
+    xAxis.setAttribute("stroke", axisColor);
+    xAxis.setAttribute("stroke-width", "1.4");
+    xAxis.setAttribute("stroke-linecap", "round");
+    svg.appendChild(xAxis);
+
+    const xArrow = document.createElementNS(svgNS, "polygon");
+    xArrow.setAttribute(
+      "points",
+      `${xEnd + 5},${y0} ${xEnd - 2},${y0 - 3.2} ${xEnd - 2},${y0 + 3.2}`
+    );
+    xArrow.setAttribute("fill", axisColor);
+    svg.appendChild(xArrow);
+
+    const xLabel = document.createElementNS(svgNS, "text");
+    xLabel.textContent = "x";
+    xLabel.setAttribute("x", String(xEnd + 14));
+    xLabel.setAttribute("y", String(y0 - 1.5));
+    xLabel.setAttribute("fill", labelColor);
+    xLabel.setAttribute("font-family", "Georgia, serif");
+    xLabel.setAttribute("font-style", "italic");
+    xLabel.setAttribute("font-size", "14");
+    xLabel.setAttribute("text-anchor", "middle");
+    xLabel.setAttribute("dominant-baseline", "central");
+    svg.appendChild(xLabel);
+
+    // Y axis: (0,0) to yEnd, with arrow pointing directly at the "y" label above it
+    const yEnd = 22;
+    const yAxis = document.createElementNS(svgNS, "line");
+    yAxis.setAttribute("x1", sx(0));
+    yAxis.setAttribute("y1", sy(0));
+    yAxis.setAttribute("x2", sx(0));
+    yAxis.setAttribute("y2", String(yEnd));
+    yAxis.setAttribute("stroke", axisColor);
+    yAxis.setAttribute("stroke-width", "1.4");
+    yAxis.setAttribute("stroke-linecap", "round");
+    svg.appendChild(yAxis);
+
+    const yArrow = document.createElementNS(svgNS, "polygon");
+    yArrow.setAttribute(
+      "points",
+      `${x0},${yEnd - 5} ${x0 - 3.2},${yEnd + 2} ${x0 + 3.2},${yEnd + 2}`
+    );
+    yArrow.setAttribute("fill", axisColor);
+    svg.appendChild(yArrow);
+
+    const yLabel = document.createElementNS(svgNS, "text");
+    yLabel.textContent = "y";
+    yLabel.setAttribute("x", String(x0));
+    yLabel.setAttribute("y", String(yEnd - 17.5));
+    yLabel.setAttribute("fill", labelColor);
+    yLabel.setAttribute("font-family", "Georgia, serif");
+    yLabel.setAttribute("font-style", "italic");
+    yLabel.setAttribute("font-size", "14");
+    yLabel.setAttribute("text-anchor", "middle");
+    yLabel.setAttribute("dominant-baseline", "central");
+    svg.appendChild(yLabel);
+
+    // Original function: f(x) = x^4 on [0, 1]
+    // Analytical least-squares fits on [0, 1]:
+    // 1. Naive Fit: y = a*x + b
+    //    a = 12 * (1/6 - 1/10) = 4/5 = 0.8
+    //    b = 1/5 - 0.8/2 = -1/5 = -0.2
+    //    Zero-crossing at x0 = 0.25, y(0) = -0.2, y(1) = 0.6
+    //
+    // 2. Naive Clamped: y = max(0.8*x - 0.2, 0)
+    //    Flat 0 on [0, 0.25], then rises linearly from (0.25, 0) to (1, 0.6)
+    //
+    // 3. Optimal Clamped: min_{a,b} \int_0^1 (max(a*x + b, 0) - x^4)^2 dx
+    //    Exact algebraic root 9*x_k^4 + 12*x_k^3 + 6*x_k^2 + 4*x_k - 4 = 0:
+    //    x_k = 0.4905977, a = 1.6730801, b = -0.8208093 (y(1) = 0.8522708)
+
+    const aLin = 0.8;
+    const bLin = -0.2;
+    const xKinkLin = 0.25;
+
+    const xKinkOpt = 0.4905977;
+    const aOpt = 1.6730801;
+    const bOpt = -0.8208093;
+
+    // Shaded negative lobe between Naive Fit and y=0 on [0, 0.25] (shown when Naive Fit is active)
+    const negFill = document.createElementNS(svgNS, "polygon");
+    negFill.setAttribute(
+      "points",
+      `${sx(0)},${sy(0)} ${sx(0)},${sy(bLin)} ${sx(xKinkLin)},${sy(0)}`
+    );
+    negFill.setAttribute("fill", "rgba(232, 68, 53, 0.14)");
+    svg.appendChild(negFill);
+
+    // Build path for f(x) = x^4
+    const N = 100;
+    let dOrig = "";
+    for (let i = 0; i <= N; i++) {
+      const x = i / N;
+      const y = x * x * x * x;
+      dOrig += (i === 0 ? "M" : "L") + `${sx(x)},${sy(y)} `;
+    }
+    const pathOrig = document.createElementNS(svgNS, "path");
+    pathOrig.setAttribute("d", dOrig.trim());
+    pathOrig.setAttribute("fill", "none");
+    pathOrig.setAttribute("stroke", "#ececec");
+    pathOrig.setAttribute("stroke-width", "2.4");
+    pathOrig.setAttribute("stroke-linecap", "round");
+    pathOrig.setAttribute("stroke-linejoin", "round");
+    svg.appendChild(pathOrig);
+
+    // Label "f(x)" right next to the endpoint of the plotted curve
+    const endX = Number(sx(1));
+    const endY = Number(sy(1));
+    const fLabel = document.createElementNS(svgNS, "text");
+    fLabel.textContent = "f(x)";
+    fLabel.setAttribute("x", String(endX - 8));
+    fLabel.setAttribute("y", String(endY + 3));
+    fLabel.setAttribute("fill", "#ececec");
+    fLabel.setAttribute("font-family", "Georgia, serif");
+    fLabel.setAttribute("font-style", "italic");
+    fLabel.setAttribute("font-size", "13.5");
+    fLabel.setAttribute("text-anchor", "end");
+    svg.appendChild(fLabel);
+
+    // 1. Naive Fit path: y = 0.8*x - 0.2
+    const pathLin = document.createElementNS(svgNS, "line");
+    pathLin.setAttribute("x1", sx(0));
+    pathLin.setAttribute("y1", sy(bLin));
+    pathLin.setAttribute("x2", sx(1));
+    pathLin.setAttribute("y2", sy(aLin + bLin));
+    pathLin.setAttribute("stroke", "#569cd6");
+    pathLin.setAttribute("stroke-opacity", "0.65");
+    pathLin.setAttribute("stroke-width", "2.2");
+    pathLin.setAttribute("stroke-dasharray", "5 4");
+    pathLin.setAttribute("stroke-linecap", "round");
+    svg.appendChild(pathLin);
+
+    // 2. Naive Clamped path: y = max(0.8*x - 0.2, 0)
+    const pathClampedNaive = document.createElementNS(svgNS, "path");
+    pathClampedNaive.setAttribute(
+      "d",
+      `M${sx(0)},${sy(0)} L${sx(xKinkLin)},${sy(0)} L${sx(1)},${sy(aLin + bLin)}`
+    );
+    pathClampedNaive.setAttribute("fill", "none");
+    pathClampedNaive.setAttribute("stroke", "#e5a646");
+    pathClampedNaive.setAttribute("stroke-opacity", "0.65");
+    pathClampedNaive.setAttribute("stroke-width", "2.3");
+    pathClampedNaive.setAttribute("stroke-linecap", "round");
+    pathClampedNaive.setAttribute("stroke-linejoin", "round");
+    svg.appendChild(pathClampedNaive);
+
+    // 3. Optimal Clamped path: y = max(1.6731*x - 0.8208, 0)
+    const pathClampedOpt = document.createElementNS(svgNS, "path");
+    pathClampedOpt.setAttribute(
+      "d",
+      `M${sx(0)},${sy(0)} L${sx(xKinkOpt)},${sy(0)} L${sx(1)},${sy(aOpt + bOpt)}`
+    );
+    pathClampedOpt.setAttribute("fill", "none");
+    pathClampedOpt.setAttribute("stroke", "#4ec9b0");
+    pathClampedOpt.setAttribute("stroke-opacity", "0.65");
+    pathClampedOpt.setAttribute("stroke-width", "2.4");
+    pathClampedOpt.setAttribute("stroke-linecap", "round");
+    pathClampedOpt.setAttribute("stroke-linejoin", "round");
+    svg.appendChild(pathClampedOpt);
+
+    // Controls: 3 independent toggle buttons
+    const controls = document.createElement("div");
+    controls.className = "diagram-controls";
+
+    const toggleGroup = document.createElement("div");
+    toggleGroup.className = "segmented-toggle";
+    toggleGroup.setAttribute("role", "group");
+    toggleGroup.setAttribute("aria-label", "Toggle approximation curves");
+
+    const series = [
+      {
+        label: "Naive Fit",
+        color: "#569cd6",
+        active: true,
+        els: [pathLin, negFill]
+      },
+      {
+        label: "Naive Clamped",
+        color: "#e5a646",
+        active: true,
+        els: [pathClampedNaive]
+      },
+      {
+        label: "Optimal Clamped",
+        color: "#4ec9b0",
+        active: true,
+        els: [pathClampedOpt]
+      }
+    ];
+
+    function syncVisibility() {
+      series.forEach((s) => {
+        s.els.forEach((el) => {
+          el.style.display = s.active ? "" : "none";
+        });
+        s.btn.classList.toggle("active", s.active);
+        s.btn.setAttribute("aria-pressed", String(s.active));
+      });
+    }
+
+    series.forEach((s) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "toggle-btn" + (s.active ? " active" : "");
+      btn.setAttribute("aria-pressed", String(s.active));
+
+      const dot = document.createElement("span");
+      dot.className = "toggle-dot";
+      dot.style.backgroundColor = s.color;
+
+      const txt = document.createTextNode(s.label);
+      btn.appendChild(dot);
+      btn.appendChild(txt);
+
+      btn.addEventListener("click", () => {
+        s.active = !s.active;
+        syncVisibility();
+      });
+
+      s.btn = btn;
+      toggleGroup.appendChild(btn);
+    });
+
+    controls.appendChild(toggleGroup);
+
+    container.innerHTML = "";
+    container.appendChild(svg);
+    container.appendChild(controls);
+
+    syncVisibility();
+  }
+
   function initAllDiagrams() {
     const el1 = document.getElementById("sh-diagram-reflective-sphere");
     if (el1) initReflectiveSphereDiagram(el1);
@@ -2021,11 +2301,14 @@
     const el3 = document.getElementById("sh-diagram-pantheon-fit");
     if (el3) initPantheonFitDiagram(el3);
 
-    const el4 = document.getElementById("sh-diagram-clamped-directional");
-    if (el4) initClampedDirectionalDiagram(el4);
+    const el4 = document.getElementById("sh-diagram-clamped-2d");
+    if (el4) initClamped2DDiagram(el4);
 
-    const el5 = document.getElementById("sh-diagram-hemisphere-bias");
-    if (el5) initHemisphereBiasDiagram(el5);
+    const el5 = document.getElementById("sh-diagram-clamped-directional");
+    if (el5) initClampedDirectionalDiagram(el5);
+
+    const el6 = document.getElementById("sh-diagram-hemisphere-bias");
+    if (el6) initHemisphereBiasDiagram(el6);
   }
 
   if (document.readyState === "loading") {

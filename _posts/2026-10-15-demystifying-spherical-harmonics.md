@@ -260,13 +260,11 @@ But even the most vanilla implementations of SH almost always add a clamp to the
 
 $$\hat{f}(\omega_x, \omega_y, \omega_z) = \max(c_0 + c_x \omega_x + c_y \omega_y + c_z \omega_z, 0)$$
 
-The L1 Encoding Rules (projection) to calculate coefficients did not take the clamp into account, and those coefficients are not actually the least-squares solution for the clamped model. In fact the function becomes *biased*, all the negative values get increased to zero, so the average value of the approximation is wrong.
+The L1 Encoding Rules (projection) are a naive linear fit that does not take the clamp into account, and so those coefficients are not actually the optimal solution for the clamped model. This is not necessarily a big problem, and I've even seen attempts to address it introduce worse problems. But it is possible to do better in specific cases by minimizing error for the clamped function.
 
-TODO: 2D diagram to show the effect of clamping.
+<div id="sh-diagram-clamped-2d" class="diagram"></div>
 
-That's not always necessarily a problem, and I've even seen attempts to address it introduce worse problems. But it is possible to do better in specific cases by minimizing error for the clamped function.
-
-For example, SH approximations are often used to represent reflected/outgoing radiance from a Lambertian/diffuse BRDF. In this case, the direction used is a surface normal (because for a given normal, light is equally reflected in all visible directions with this BRDF). If our lighting is a simple directional light, we can *perfectly* represent the Lambertian reflected light using the clamped function, with zero error. But naive SH projection is overly soft, because it's minimizing error for the wrong reconstruction function.
+A specific example that comes up in graphics are when SH approximations are used to represent reflected/outgoing radiance from a Lambertian/diffuse BRDF. In this case, the direction $$\omega$$ used is a surface normal (because for a given normal, light is equally reflected in all visible directions with this BRDF). If our lighting is a simple directional light, we can *perfectly* represent the Lambertian reflected light using the clamped function, with zero error. But naive SH projection is overly soft, because it's minimizing error for the wrong reconstruction function.
 
 <div id="sh-diagram-clamped-directional" class="diagram"></div>
 
