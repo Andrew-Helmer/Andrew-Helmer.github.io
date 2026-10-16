@@ -2255,6 +2255,7 @@
           el.style.display = s.active ? "" : "none";
         });
         s.btn.classList.toggle("active", s.active);
+        s.btn.style.borderColor = s.active ? s.color : "transparent";
         s.btn.setAttribute("aria-pressed", String(s.active));
       });
     }
@@ -2264,14 +2265,7 @@
       btn.type = "button";
       btn.className = "toggle-btn" + (s.active ? " active" : "");
       btn.setAttribute("aria-pressed", String(s.active));
-
-      const dot = document.createElement("span");
-      dot.className = "toggle-dot";
-      dot.style.backgroundColor = s.color;
-
-      const txt = document.createTextNode(s.label);
-      btn.appendChild(dot);
-      btn.appendChild(txt);
+      btn.textContent = s.label;
 
       btn.addEventListener("click", () => {
         s.active = !s.active;
