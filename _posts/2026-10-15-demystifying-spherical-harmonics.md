@@ -30,6 +30,8 @@ If we don't need very high resolution, instead we may want to store a fast very 
 
 A 6-pixel (one for each face) cubemap or 8-value octahedral map works in many cases, but there are downsides which I won't go into here.
 
+## A Simple Linear Model
+
 So instead, let's come up with a mathematical approximation. A linear model like this is just about the simplest reasonable approximation I can think of (aside from a flat constant):
 
 <div class="callout-box" markdown="1">
@@ -254,9 +256,11 @@ For example, SH approximations are often used to represent reflected/outgoing ra
 
 Least squares error is also rarely ideal for graphics application. A relative (pseudo-logarithmic) error is usually better, and there are even better perceptual error metrics depending on what you know about your scene.
 
-Finally, many people make the mistake of using standard or naive SH projection when your incoming light distribution is actually a *hemisphere*, for example when generating directional lightmaps. This can actually lead to meaningful bias, ending up too bright even for a completely flat surface where we should be matching non-directional lightmaps.
+Finally, many people make the mistake of using standard or naive SH projection when your function domain is actually a *hemisphere*, for example when generating directional lightmaps. This can actually lead to meaningful bias, ending up too bright even for a completely flat surface where we should be matching non-directional lightmaps.
 
 <div id="sh-diagram-hemisphere-bias" class="diagram"></div>
+
+There are other situations where other domains could be better. For example, you might want to optimize SH across points on the surface of a model.
 
 In practice, these may or may not be important problems in your application, but I have seen significant improvements to visual quality by addressing them.
 
@@ -547,4 +551,4 @@ Finally, this is not directly related to SH, but I definitely want to highlight 
 
 ## AI Disclaimer
 
-All of the prose writing in this article is my own, not AI. I did most of the derivations by hand and asked AI to convert to proper KaTeX formatting, and a few other things it filled out (like the Orthogonal Form). However all of the diagrams were implemented by AI (with multiple iterations), and I also incorporated feedback and error-corrections from AI.
+All of the prose writing in this article is my own, not AI. I did the derivations by hand but then asked AI to convert to proper KaTeX formatting and fix inconsistent notation, and the AI filled out a few other things (like the Orthogonal Form rules). However all of the diagrams were implemented by AI (with multiple iterations), and I also incorporated feedback and error-corrections from AI.
