@@ -7,13 +7,13 @@ date: 2026-10-15
 latex: true
 ---
 
-Ever since I first heard of spherical harmonics as an approximation in computer graphics, I have felt that the way they are explained is too complicated. Sometimes the explanations assume a prerequisite amount of math knowledge that isn't really necessary, and they tend to be very abstract. Other times they show something complex and through a lot of effort end up simplifying them to something usable. In addition to making it harder to learn, I think those approaches to SH can lead to misapplication. SH introductions often have discussion about certain SH artifacts (ringing and negative values), but ignore another class of common issues.
+Ever since I first heard of spherical harmonics as an approximation in computer graphics, I have felt that the way they are explained is too complicated. Sometimes the explanations assume a bunch of math knowledge that isn't really necessary, and they tend to be very abstract. Other times they show something complex and through a lot of effort end up simplifying them to something usable. In addition to making it harder to learn, I think those approaches to SH can lead to misapplication. SH introductions often have discussion about certain SH artifacts (ringing and negative values), but ignore another class of common issues.
 
 <!--more-->
 
 {:todo: style="color: red"}
 
-In this post, what we're going to do is start with a common problem in graphics, solve it as simply as we can using tools that I think many programmers are familiar with, and end up getting something that is equivalent to SH approximations. This is aimed towards people who want to learn to use SH in graphics, but even if you already know how to use SH in graphics, I hope that this approach to SH is still useful to think about.
+In this post, what we're going to do is start with a common problem in graphics, solve it as simply as we can using tools that I think many programmers are familiar with, and end up getting something that is equivalent to SH approximations. The aim of this post is to teach SH for graphics in a more intuitive way, but even if you already know how to use SH in graphics, I hope that this approach will give a new perspective.
 
 ## AI Disclaimer
 
