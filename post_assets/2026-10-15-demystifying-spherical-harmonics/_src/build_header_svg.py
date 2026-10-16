@@ -41,10 +41,16 @@ markers = [
 for color, x, y, w, h, img_path in markers:
     with open(img_path, "rb") as imgf:
         b64 = base64.b64encode(imgf.read()).decode("ascii")
+    if img_path.endswith(".webp"):
+        mime = "image/webp"
+    elif img_path.endswith(".jpg") or img_path.endswith(".jpeg"):
+        mime = "image/jpeg"
+    else:
+        mime = "image/png"
     img_tag = (
         f"<g transform='scale(1,-1)'>\n"
         f"<image x='{x}' y='{y}' width='{w}' height='{h}' "
-        f"preserveAspectRatio='none' xlink:href='data:image/png;base64,{b64}'/>\n"
+        f"preserveAspectRatio='none' xlink:href='data:{mime};base64,{b64}'/>\n"
         f"</g>"
     )
     pattern = rf"<g fill='{color}' stroke='{color}'>\s*<path[^>]+/>\s*</g>"
