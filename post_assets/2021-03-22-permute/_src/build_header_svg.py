@@ -40,6 +40,11 @@ def replace_bg(m):
 svg, n_bg = re.subn(bg_pattern, replace_bg, svg, count=1)
 assert n_bg == 1, "Failed to replace background rect"
 
+# Ensure all font glyph <path> and <use> elements have stroke='none' so scaled TikZ nodes
+# never inherit a stroke outline from enclosing <g> groups.
+svg = re.sub(r"<path id='(g[^']+)' d='([^']+)'/>", r"<path id='\1' stroke='none' d='\2'/>", svg)
+svg = re.sub(r"<use x='([^']+)' y='([^']+)' xlink:href='#(g[^']+)'/>", r"<use x='\1' y='\2' stroke='none' xlink:href='#\3'/>", svg)
+
 with open(out_svg_path, "w", encoding="utf-8") as f:
     f.write(svg)
 
