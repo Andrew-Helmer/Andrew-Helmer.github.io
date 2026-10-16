@@ -1,6 +1,6 @@
 # Spherical Harmonics Header Image & Diagrams Build Guide
 
-This directory (`post_assets/2026-10-19-demystifying-spherical-harmonics/_src/`) contains the source code and build pipeline for the header image of `_posts/2026-10-19-demystifying-spherical-harmonics.md`, as well as documentation for a future AI or developer on how to regenerate the header image or restyle the post's visuals if the site's color scheme or typography changes.
+This directory (`post_assets/2026-10-15-demystifying-spherical-harmonics/_src/`) contains the source code and build pipeline for the header image of `_posts/2026-10-15-demystifying-spherical-harmonics.md`, as well as documentation for a future AI or developer on how to regenerate the header image or restyle the post's visuals if the site's color scheme or typography changes.
 
 > **Note:** Because this folder is named `_src` (with a leading underscore), Jekyll automatically excludes it from the generated `_site/` build output while keeping the source files co-located right next to the post's published assets.
 
@@ -11,7 +11,7 @@ This directory (`post_assets/2026-10-19-demystifying-spherical-harmonics/_src/`)
 From the repository root, run:
 
 ```bash
-bash post_assets/2026-10-19-demystifying-spherical-harmonics/_src/build_header.sh
+bash post_assets/2026-10-15-demystifying-spherical-harmonics/_src/build_header.sh
 ```
 
 **Prerequisites (macOS):**
@@ -20,7 +20,7 @@ bash post_assets/2026-10-19-demystifying-spherical-harmonics/_src/build_header.s
 - `dwebp` (`libwebp`) and `magick` (`ImageMagick`)
 - `python3`
 
-Running `build_header.sh` automatically updates all three output files in `post_assets/2026-10-19-demystifying-spherical-harmonics/`:
+Running `build_header.sh` automatically updates all three output files in `post_assets/2026-10-15-demystifying-spherical-harmonics/`:
 1. `spherical-harmonics-header.svg` — Used as the main post `image:` in the blog post front-matter. Contains crisp vector LaTeX math paths (`dvisvgm --no-fonts`) + embedded base64 32-bit RGBA PNGs of the three 3D spheres.
 2. `spherical-harmonics-header.png` — High-resolution 300 DPI PNG rendered via `pdflatex` + Ghostscript (`gs`).
 3. `spherical-harmonics-header-meta.jpg` — Social/OpenGraph preview image (`meta_image:` in the post front-matter), resized to 1200px wide.
@@ -49,7 +49,7 @@ Running `build_header.sh` automatically updates all three output files in `post_
    - When compiled with `pdflatex` (`\pdfoutput > 0`), it embeds `sphere_mode{0,1,2}.png` directly via `\includegraphics`.
    - When compiled with `latex` (`\pdfoutput = 0`), it uses `\def\pgfsysdriver{pgfsys-dvisvgm.def}` and draws three placeholder marker squares (`#010101`, `#020202`, `#030303`).
    - `dvisvgm --no-fonts` converts the DVI into an SVG with pure `<path>` vector outlines for all math glyphs.
-   - `build_header_svg.py` replaces the three marker paths with `<image xlink:href="data:image/png;base64,...">` elements (self-contained so `<img src="/post_assets/2026-10-19-demystifying-spherical-harmonics/spherical-harmonics-header.svg">` works in all browsers) and ensures the background `<rect>` is a standard SVG `<rect>`.
+   - `build_header_svg.py` replaces the three marker paths with `<image xlink:href="data:image/png;base64,...">` elements (self-contained so `<img src="/post_assets/2026-10-15-demystifying-spherical-harmonics/spherical-harmonics-header.svg">` works in all browsers) and ensures the background `<rect>` is a standard SVG `<rect>`.
 
 ---
 
@@ -64,7 +64,7 @@ Running `build_header.sh` automatically updates all three output files in `post_
      \definecolor{errred}{HTML}{E84435}    % Red accent matching the error sphere
      ```
    - Because the three rendered spheres (`sphere_mode{0,1,2}.png`) have **transparent RGBA backgrounds**, you do *not* need to modify `render_spheres.cpp` if only the page background color changes (unless you want to change the red tint of the error sphere on line ~182 of `render_spheres.cpp`).
-   - Re-run `bash post_assets/2026-10-19-demystifying-spherical-harmonics/_src/build_header.sh`.
+   - Re-run `bash post_assets/2026-10-15-demystifying-spherical-harmonics/_src/build_header.sh`.
 
 2. **Interactive WebGL Diagrams (`../sh-diagrams.js` and `style.scss`):**
    - All 5 WebGL2 canvases in `../sh-diagrams.js` use transparent backgrounds (`gl.clearColor(0, 0, 0, 0)` with `alpha: true, premultipliedAlpha: true`), so they automatically adapt to any CSS page background color.
@@ -76,5 +76,5 @@ Running `build_header.sh` automatically updates all three output files in `post_
 ### B. Changing Math or Display Fonts
 - The math in the post body is rendered by **KaTeX** (configured in `_layouts/default.html`), which uses Computer Modern (`KaTeX_Main` / `KaTeX_Math`).
 - The math in `spherical-harmonics-header.tex` uses LaTeX's default **Computer Modern** font to match KaTeX.
-- If you change the math font in the future, add the corresponding font package (e.g., `\usepackage{newpxtext,newpxmath}` or `\usepackage{libertinust1math}`) to the preamble of `spherical-harmonics-header.tex` and run `bash post_assets/2026-10-19-demystifying-spherical-harmonics/_src/build_header.sh`.
+- If you change the math font in the future, add the corresponding font package (e.g., `\usepackage{newpxtext,newpxmath}` or `\usepackage{libertinust1math}`) to the preamble of `spherical-harmonics-header.tex` and run `bash post_assets/2026-10-15-demystifying-spherical-harmonics/_src/build_header.sh`.
 
