@@ -188,18 +188,18 @@
     toggleGroup.setAttribute("role", "group");
     toggleGroup.setAttribute("aria-label", "Sphere visualization mode");
 
-    const btnChrome = document.createElement("button");
-    btnChrome.type = "button";
-    btnChrome.className = "toggle-btn active";
-    btnChrome.textContent = "Chrome Ball";
-
     const btnProj = document.createElement("button");
     btnProj.type = "button";
-    btnProj.className = "toggle-btn";
+    btnProj.className = "toggle-btn active";
     btnProj.textContent = "Spherical Projection";
 
-    toggleGroup.appendChild(btnChrome);
+    const btnChrome = document.createElement("button");
+    btnChrome.type = "button";
+    btnChrome.className = "toggle-btn";
+    btnChrome.textContent = "Chrome Ball";
+
     toggleGroup.appendChild(btnProj);
+    toggleGroup.appendChild(btnChrome);
     controls.appendChild(toggleGroup);
 
     container.innerHTML = "";
@@ -360,7 +360,7 @@
     let yaw = DEFAULT_YAW;
     let pitch = DEFAULT_PITCH;
     const dist = 2.85;
-    let projMode = 0; // 0 = Chrome Ball, 1 = Spherical Projection
+    let projMode = 1; // 0 = Chrome Ball, 1 = Spherical Projection
     let isVisible = false;
     let rafId = null;
 
