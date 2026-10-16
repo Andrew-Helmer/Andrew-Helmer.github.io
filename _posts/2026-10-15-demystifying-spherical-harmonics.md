@@ -15,7 +15,11 @@ Ever since I first heard of spherical harmonics as an approximation in computer 
 
 In this post, what we're going to do is start with a common problem in graphics, solve it as simply as we can using tools that I think many programmers are familiar with, and end up getting something that is equivalent to SH approximations. This is aimed towards people who want to learn to use SH in graphics, but even if you already know how to use SH in graphics, I hope that this approach to SH is still useful to think about.
 
-## Spherical Data
+## AI Disclaimer
+
+All of the prose writing in this article is my own, not AI. I did the derivations by hand but then asked AI to convert to proper KaTeX formatting and fix inconsistent notation, and the AI filled out a few other things (like the Orthogonal Form rules). However all of the diagrams were implemented by AI (with multiple iterations), and I also incorporated feedback and error-corrections from AI.
+
+## A Spherical Function
 
 So let's start with the engineering problem. We have a whole bunch of values that are oriented in different directions. In graphics, a common example of this is the incoming light (radiance) at a particular point in space, which has a different value in different directions. For this one specific point in space, we can call these values a function $$f(\omega)$$, where omega $$\omega$$ is a direction, with components $$\langle \omega_x, \omega_y, \omega_z \rangle$$ and $$\omega_x^2 + \omega_y^2 + \omega_z^2 = 1$$. In other words, it's a unit vector.
 
@@ -24,15 +28,15 @@ This visualization is a simple example of what this function might look like. Yo
 <div id="sh-diagram-reflective-sphere" class="diagram"></div>
 <script defer src="{{ site.baseurl }}/post_assets/2026-10-15-demystifying-spherical-harmonics/sh-diagrams.js"></script>
 
-For a given direction, calculating the value is expensive. It could mean ray-tracing, path-tracing, or rasterizing a pixel. In something like a game, you typically don't want to fully calculate a reflection value for every point that you want to shade. Alternatively, you can pre-render a high resolution version of the spherical function, possibly storing in a cubemap or an octahedral map. But this requires a lot of memory for many points in space.
+For a given direction $$\omega$$, calculating the value $$f(\omega)$$ is expensive. It could mean ray-tracing, path-tracing, or rasterizing a pixel. In real-time rendering for a game, you typically don't want to fully calculate a reflection value for every point that you want to shade. Alternatively, you can pre-render a high resolution version of the spherical function, possibly storing in a cubemap or an octahedral map. But this requires a lot of memory for many points in space.
 
 If we don't need very high resolution, instead we may want to store a fast very low resolution approximation, we'll call $$\hat{f}$$. Note that $$\hat{f}$$ is called "F hat" and the hat is common notation for approximations in statistics.
 
 A 6-pixel (one for each face) cubemap or 8-value octahedral map works in many cases, but there are downsides which I won't go into here.
 
-## A Simple Linear Model
+## A Linear Approximation
 
-So instead, let's come up with a mathematical approximation. A linear model like this is just about the simplest reasonable approximation I can think of (aside from a flat constant):
+So instead, let's come up with a mathematical approximation $$\hat{f}(\omega)$$ for our function $$f(\omega)$$. A linear model like this is just about the simplest reasonable approximation that I can think of (aside from a flat constant):
 
 <div class="callout-box" markdown="1">
 <div class="callout-title">Linear (L1) Approximation Model</div>
@@ -47,7 +51,7 @@ It might be obvious that you can think of the $$c_0$$ term as an overall intensi
 
 <div id="sh-diagram-linear-approx" class="diagram"></div>
 
-So how do we get these four coefficients? A quick idea might be to find the coefficients $$c_0, c_x, c_y, c_z$$. that minimize the (sum/average/integrated) square error $$(\hat{f}(\omega) - f(\omega))^2$$ against the original function or a high-resolution version. In other words, a good old fashioned linear regression. In this code we'll sample some random directions and regress on those.
+So how do we get these four coefficients? A quick idea might be to find the coefficients $$c_0, c_x, c_y, c_z$$. that minimize the (sum/average/integrated) square error $$(\hat{f}(\omega) - f(\omega))^2$$ against the original function or a high-resolution version. In other words, a good old fashioned linear regression. In this Python code we'll sample some random directions and regress on those.
 
 {% highlight python linenos %}
 def encode_linear_coefficients(spherical_fn, num_dirs=8192, seed=None):
@@ -65,21 +69,23 @@ def encode_linear_coefficients(spherical_fn, num_dirs=8192, seed=None):
     return coefficients
 {% endhighlight %}
 
-These coefficients give us a pretty simple spherical approximation.
+These coefficients give us our fast, low-memory spherical approximation.
 
 <div id="sh-diagram-pantheon-fit" class="diagram"></div>
 
 Well, we pretty much just reinvented spherical harmonic approximations\! This is most likely something countless people have done without even realizing that what they did was equivalent to using SH.
 
-Maybe it would be more accurate to say that this is a valid, though inefficient, implementation of a specific SH approximation. We would call this an $$l = 1$$, or L1, spherical harmonics approximation, where "$$l$$" is the degree of the polynomial. You can also have an $$l = 0$$ SH approximation, with a single constant like $$\hat{f}(\omega) = c_0$$, or higher $$l$$ values that store coefficients for higher degrees of polynomials, like $$l = 2$$ includes the terms $$x^2$$, $$xy$$, $$xz$$, $$y^2$$, etc. each with their own coefficient. Higher degree polynomials have a bit of extra complexity we'll talk about later, but it's still just a basic linear model, with a least squares fit\!
+Maybe it would be more accurate to say that this is a valid, though inefficient, implementation of a specific SH approximation. We would call this an $$l = 1$$, or L1, spherical harmonics approximation, where "$$l$$" is the degree of the polynomial. You can also have an $$l = 0$$ SH approximation, with a single constant like $$\hat{f}(\omega) = c_0$$. 
+
+Higher $$l$$ values will store coefficients for higher degrees of polynomials, for example $$l = 2$$ includes coefficients for $$x^2$$, $$xy$$, $$xz$$, $$y^2$$, etc. Higher degree polynomials have a bit of extra complexity we'll talk about later, but it's still just a basic linear model, with a least squares fit\!
 
 Spherical harmonic approximations are actually nearly the blandest approximation model you could think of to represent a spherical function. If this is the first time you're learning about SH, you might be thinking... why do we even use a special name for a basic linear model?
 
 You may notice that I've been saying SH *approximations* rather than just SH. A big part of why we have a special name is the difference between the mathematical construct (spherical harmonics) and the application of them (SH approximations). Also part of the answer is due to the history of the application of SH to graphics, and due to the relationships with other things in math.
 
-But SH approximations are also special compared to other linear models, because of two interesting properties:  
+But there are two interesting properties of SH approximations that make them special compared to other linear models:  
 1. Very fast and simple calculation of the coefficients (encoding)  
-2. Very fast convolutions of the spherical harmonic approximation
+1. Very fast convolutions of the spherical harmonic approximation
 
 In graphics, performance is really important, so being able to do these things fast is a big part of why SH approximations are used at all.
 
@@ -87,15 +93,17 @@ As I'll show shortly, the first property is because we are optimizing least squa
 
 ## Fast Calculation of the (L1) Linear Model Coefficients
 
-The calculation of the coefficients is often called "encoding". In a machine learning context this would often be called regression or fitting or learning or maybe compressing or mayyybe training. When it comes to spherical harmonics, the fast *method* of encoding is specifically called "projection" for reasons that we'll discuss later.
+The calculation of the coefficients is often called "encoding". In a machine learning context this would often be called regression or fitting or learning or maybe compressing or mayyybe training. 
+
+When it comes to spherical harmonics, the fast *method* of encoding is specifically called **projection**.
 
 Then evaluating the approximation function $$\hat{f}$$ I'll usually call reconstruction, but it could also be called decoding. In an ML context it might be called inference or estimation (or prediction, but that's not really appropriate here, since we're approximating something that's known, rather than predicting something unknown).
 
-We're going to derive the fast encoding from scratch, for both the $$c_0$$ term and the $$c_x$$ term. The $$c_y$$ and $$c_z$$ terms are basically the same as $$c_x$$. The derivation involves a small amount of calculus, but if you want, you can skip the [L1 Encoding Derivation](#l1-encoding-derivation) section, and go to [L1 Encoding Rules](#l1-encoding-rules).
+We're going to derive the fast encoding from scratch, for both the $$c_0$$ term and the $$c_x$$ term. The $$c_y$$ and $$c_z$$ terms are basically the same as $$c_x$$. The derivation involves a small amount of calculus, but if you want, you can skip the [L1 Encoding Derivation](#l1-encoding-derivation) section, and go to [L1 Encoding Rules (Projection)](#l1-encoding-rules-projection).
 
 ### L1 Encoding Derivation
 
-Typically to minimize multiple parameters over a function, you'd need to jointly optimize every coefficient. But let's see what happens if we start by optimizing just $$c_0$$ on its own. 
+Typically to minimize a function with multiple parameters, you'd need to jointly minimize every parameter. But let's see what happens if we start by optimizing just $$c_0$$ on its own. 
 
 We want to find the $$c_0$$ that minimizes least squares errors. This is written as:
 
@@ -160,7 +168,9 @@ Like the previous derivation, we would first take the derivative and set it to z
 
 $$2 \left\langle (\hat{f}(\omega) - f(\omega)) \frac{\partial(\hat{f}(\omega) - f(\omega))}{\partial c_x} \right\rangle_\Omega = 0$$
 
-Focusing on the inner derivative term, again we separate the terms, such that $$\frac{\partial(\hat{f}(\omega) - f(\omega))}{\partial c_x} = \frac{\partial\hat{f}(\omega)}{\partial c_x} - \frac{\partial f(\omega)}{\partial c_x}$$.
+Focusing on the inner derivative term, again we separate the terms, such that 
+
+$$\frac{\partial(\hat{f}(\omega) - f(\omega))}{\partial c_x} = \frac{\partial\hat{f}(\omega)}{\partial c_x} - \frac{\partial f(\omega)}{\partial c_x}$$
 
 $$\frac{\partial f(\omega)}{\partial c_x}$$ is still zero, because $$c_x$$ is unrelated to the original function.
 
@@ -174,11 +184,11 @@ or
 
 $$\langle \hat{f}(\omega) \, \omega_x \rangle_\Omega = \langle f(\omega) \, \omega_x \rangle_\Omega$$
 
-Expanding $$\hat{f}(\omega)$$ and separating the average terms, we have
+Expanding $$\hat{f}(\omega)$$ and separating the average terms:
 
 $$\langle c_0 \omega_x \rangle_\Omega + \langle c_x \omega_x^2 \rangle_\Omega + \langle c_y \omega_y \omega_x \rangle_\Omega + \langle c_z \omega_z \omega_x \rangle_\Omega = \langle f(\omega) \, \omega_x \rangle_\Omega$$
 
-Because of spherical symmetry, every average term is zero except the $$\omega_x^2$$ one, because $$\omega_x^2$$ is non-negative everywhere. So we have:
+Because of spherical symmetry, every average term is zero except the $$\omega_x^2$$ one, because $$\omega_x^2$$ is non-negative everywhere, which simplifies to:
 
 $$\langle c_x \omega_x^2 \rangle_\Omega = \langle f(\omega) \, \omega_x \rangle_\Omega$$
 
@@ -196,12 +206,12 @@ $$c_x = 3 \langle f(\omega) \, \omega_x \rangle_\Omega$$
 
 Now you start to get a sense for why this is called "projection". It looks like projecting the function onto the $$\omega_x$$ value, with a scale.
 
-### L1 Encoding Rules
+### L1 Encoding Rules (Projection)
 
-Now we have our super fast and easy encoding of coefficients for our linear model:
+Now we have our super fast and easy encoding of coefficients for our linear model - projection.
 
 <div class="callout-box" markdown="1">
-<div class="callout-title">L1 Encoding Rules</div>
+<div class="callout-title">L1 Encoding Rules (Projection)</div>
 
 $$
 \begin{aligned}
@@ -242,27 +252,37 @@ Now that we've derived the fast encoding, let's reconsider some important assump
 
 Typical applications of spherical harmonics in graphics violate at least one of these assumptions, sometimes two, often all three. Even when the assumptions are violated, spherical harmonics are still usually pretty good *in practice*, but sometimes the issues can be significant.
 
+### Assumption 1 Violations
+
 The first assumption might seem comically obvious - of course the encoding only works for the reconstruction function that it was derived with\! But virtually all SH implementations in graphics violate it. For one thing, there are improvements to spherical harmonics that use different forms of reconstruction, i.e. completely different models. Like the ZH3 hallucination, or the Geomerics reconstruction (this also includes a convolution).
 
-But even the most vanilla implementations of SH almost always add a clamp to prevent negative lighting values:
+But even the most vanilla implementations of SH almost always add a clamp to the reconstruction fuction / approximation model to prevent negative lighting values:
 
 $$\hat{f}(\omega_x, \omega_y, \omega_z) = \max(c_0 + c_x \omega_x + c_y \omega_y + c_z \omega_z, 0)$$
 
-And in this case, "projection" is no longer the optimal least squares solution. If you do projection in the standard way, but clamp, it becomes biased. The average value of the clamped reconstruction is brighter than the unclamped reconstruction. That's not always necessarily bad, and I've even seen attempts to address it introduce worse problems. But it is possible to do better in specific cases by minimizing error for the clamped function.
+The L1 Encoding Rules (projection) to calculate coefficients did not take the clamp into account, and those coefficients are not actually the least-squares solution for the clamped model. In fact the function becomes *biased*, all the negative values get increased to zero, so the average value of the approximation is wrong.
+
+TODO: 2D diagram to show the effect of clamping.
+
+That's not always necessarily a problem, and I've even seen attempts to address it introduce worse problems. But it is possible to do better in specific cases by minimizing error for the clamped function.
 
 For example, SH approximations are often used to represent reflected/outgoing radiance from a Lambertian/diffuse BRDF. In this case, the direction used is a surface normal (because for a given normal, light is equally reflected in all visible directions with this BRDF). If our lighting is a simple directional light, we can *perfectly* represent the Lambertian reflected light using the clamped function, with zero error. But naive SH projection is overly soft, because it's minimizing error for the wrong reconstruction function.
 
 <div id="sh-diagram-clamped-directional" class="diagram"></div>
 
-Least squares error is also rarely ideal for graphics application. A relative (pseudo-logarithmic) error is usually better, and there are even better perceptual error metrics depending on what you know about your scene.
+### Assumption 2 Violations
 
-Finally, many people make the mistake of using standard or naive SH projection when your function domain is actually a *hemisphere*, for example when generating directional lightmaps. This can actually lead to meaningful bias, ending up too bright even for a completely flat surface where we should be matching non-directional lightmaps.
+I won't go into too much detail here, but least squares error is rarely ideal for graphics applications. The eye is much more sensitive to small changes in light in a dark room than in bright sunlight. So a relative (pseudo-logarithmic) error is usually better, and there are even better perceptual error metrics depending on what you know about your scene. This might be something I tackle in a future blog post, but for better error functions you might need to use gradient descent or other techniques to get the optimal solutions.
+
+### Assumption 3 Violations
+
+Finally, IMO the most important mistake is using SH projection (the fast encoding rules) when your function domain is not a sphere. A very common domain is a *hemisphere*, for example when generating directional lightmaps. This can actually lead to meaningful bias, ending up too bright even for a completely flat surface where we should be matching non-directional lightmaps.
 
 <div id="sh-diagram-hemisphere-bias" class="diagram"></div>
 
-There are other situations where other domains could be better. For example, you might want to optimize SH across points on the surface of a model.
+In addition to hemispherical domains, sometimes you might want to do things like optimize lighting for the points on the surface of a model. A good fallback here is to use standard linear regression like in the very first Python example.
 
-In practice, these may or may not be important problems in your application, but I have seen significant improvements to visual quality by addressing them.
+In practice, these assumption violations may or may not be important problems in your application, but I have seen significant improvements to visual quality by addressing them.
 
 ## Convolution
 
@@ -270,7 +290,7 @@ Let's say we have an L1 spherical harmonic approximation, encoded with our 4 coe
 
 I'll spoil the surprise before doing the derivation this time. It turns out that for a given convolution $$g(f)$$, we can simply precompute 2 coefficient factors, one for $$c_0$$ and another that multiplies $$c_x, c_y, c_z$$. For example, let's say we have a Lambertian (diffuse) BRDF. For a given surface normal $$n$$, to "convolve" from incoming radiance for every direction to the reflected radiance (which is uniform across all reflection directions), you just multiply the $$c_x, c_y, c_z$$ components by $$2/3$$! This is taking into account the typical $$\frac{1}{\pi}$$ BRDF constant.
 
-Now we'll derive this rule for convolutions, for $$c_0$$ at least. Let's say that a convolution takes in a spherical function or data, a direction, and outputs a value that is a weighted integral of the original spherical data.
+Now we'll derive this rule for convolutions, for $$c_0$$ at least. Let's say that a convolution takes in a spherical function or data, a direction, and outputs a value that is a weighted integral of the original spherical function.
 
 $$g(f, n) = \int_\Omega h(n \cdot \omega) \, f(\omega) \, \mathrm{d}\omega$$
 
@@ -336,20 +356,18 @@ You might notice that $$c_{z^2} \omega_z^2$$ is missing. This is because we know
 
 But if we want to find the encoding rules like we did for the L1 model, things get a little more complicated. We have two options for how to approach things:
 
-Option 1: Keep reconstruction as cheap as possible (Fast Reconstruction Form), use the simple linear model given above.  
-Option 2: Keep encoding simpler at a slight expense to reconstruction, and keep the coefficients independent.
+**Option 1:** Keep reconstruction as cheap as possible, use the simple linear model given above (Fast Reconstruction Form).
+**Option 2:** Keep encoding simpler at a slight expense to reconstruction, and keep the coefficients independent (Orthogonal Form, which I'll give below).
 
 Let's start with Option 1 because it's more informative as to why it’s problematic. In practice I would typically use Option 2 in real-time graphics. But Option 1 I’d use in any situation where we’re actually doing gradient descent anyway (say, as part of some other ML model).
 
-### Fast Reconstruction Form (FRF)
+### Fast Reconstruction Form (FRF) Issues
 
 To understand why the encoding gets more complicated, we'll do some math using a simpler model of only one axis:
 
 $$\hat{f}(\omega_x) = c_0 + c_x \omega_x + c_{x^2} \omega_x^2$$
 
 We'll now rederive the encoding rules for all three coefficients. Even though it's only one axis, this is a little bit denser than the L1 derivation and I'm going to skip more within it, so feel free to jump ahead to the [L2 Encoding Rules](#l2-frf-encoding-rules).
-
-#### L2 One-Axis Encoding Derivation
 
 Again we start with taking the partial derivative and setting it equal to zero.
 
@@ -414,12 +432,12 @@ $$
 
 This doesn't really help us with the multi-axis derivation directly, but it shows why this gets a bit more complicated. The different coefficients and "projections" now have interdependencies.
 
-#### L2 (FRF) Encoding Rules
+### L2 (FRF) Encoding Rules
 
-The multi-axis model is a bit more complicated, but it ends up with these full encoding rules.
+The encoding rules for the multi-axis FRF model require a longer derivation, but it's more of the same, so I'll just give the rules themselves:
 
 <div class="callout-box" markdown="1">
-<div class="callout-title">L2 (FRF) Encoding Rules</div>
+<div class="callout-title">L2 (FRF) Encoding Rules (Projection)</div>
 
 $$
 \begin{alignedat}{4}
@@ -441,7 +459,7 @@ $$
 
 The Fast Reconstruction Form above means the encoding rules get a little bit uglier. You can also argue that the coefficients are less interpretable - before with L1 it was nice that $$c_0$$ was a simple average over the unit sphere. This could mean, for example, that if you were developing a game with options for high-quality and very low-quality global illumination using spherical harmonics, you could just use $$c_0$$ for the very low-quality version. But that's no longer true.
 
-To address these problems, we're going to change our reconstruction function to keep all the terms *orthogonal*, which practically means they won't affect each other in encoding or convolution. This is a bit hand-wavey - it might be nice to work backwards here to derive these specific forms rather than presenting them immediately - but I wasn't sure if it would add much value to this post.
+To address these problems, we can change our reconstruction function to keep all the terms *orthogonal*, which practically means they won't affect each other in encoding or convolution. This is mathematically the same model (it will give the same approximation), but the changed "features" or "columns" (as we'd call them in ML or stats) have been changed in a way that the minimum coefficients will have terms that cancel out.
 
 <div class="callout-box" markdown="1">
 <div class="callout-title">L2 Orthogonal Form Model</div>
@@ -457,7 +475,9 @@ $$
 
 </div>
 
-Note that the coefficients have different subscripts now and the terms have been rearranged a bit, this is to be more consistent with typical spherical harmonic definitions. The important thing is that the changed "features" or "columns" (as we'd call them in ML or stats) create cancellation in the encoding derivations. So we end up with encoding rules:
+Note that the coefficients have different subscripts now and the terms have been rearranged a bit, this is to be more consistent with typical spherical harmonic definitions. This is a bit hand-wavey - it might be nice to derive these specific forms rather than presenting them immediately - but I wasn't sure if it would add much value to this post.
+
+The important thing is that we get simpler and more consistent encoding rules:
 
 <div class="callout-box" markdown="1">
 <div class="callout-title">L2 Orthogonal Encoding Rules</div>
@@ -548,7 +568,3 @@ Now, if this is your first introduction to SH, and you want to bridge the gap fu
 After reading that nicebyte article, I also recommend Graham Hazel's [Alternative Definition of Spherical Harmonics for Lighting](https://grahamhazel.com/blog/2017/12/18/alternative-definition-of-spherical-harmonics-for-lighting/). Hazel also defines SH on a sphere with surface area 1, which is really the same as using the average over the sphere instead of the integral.
 
 Finally, this is not directly related to SH, but I definitely want to highlight all of Bartosz Ciechanowski's amazing blog, and particularly his post [Lights and Shadows](https://ciechanow.ski/lights-and-shadows/). That was a strong inspiration for the interactive diagrams in this post.
-
-## AI Disclaimer
-
-All of the prose writing in this article is my own, not AI. I did the derivations by hand but then asked AI to convert to proper KaTeX formatting and fix inconsistent notation, and the AI filled out a few other things (like the Orthogonal Form rules). However all of the diagrams were implemented by AI (with multiple iterations), and I also incorporated feedback and error-corrections from AI.
