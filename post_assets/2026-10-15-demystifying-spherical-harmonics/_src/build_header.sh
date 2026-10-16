@@ -17,6 +17,7 @@ clang++ -O3 "$SCRIPT_DIR/render_spheres.cpp" -o "$BUILD_DIR/render_spheres"
 for m in 0 1 2; do
   magick "$BUILD_DIR/sphere_mode${m}.ppm" "$BUILD_DIR/sphere_mode${m}_alpha.pgm" \
     -alpha off -compose CopyOpacity -composite "PNG32:$BUILD_DIR/sphere_mode${m}.png"
+  cwebp -q 94 -alpha_q 100 -m 6 "$BUILD_DIR/sphere_mode${m}.png" -o "$BUILD_DIR/sphere_mode${m}.webp" >/dev/null 2>&1
 done
 
 echo "3. Compiling LaTeX labels and building spherical-harmonics-header.svg..."
@@ -28,7 +29,7 @@ cp "$SCRIPT_DIR/spherical-harmonics-header.tex" "$BUILD_DIR/"
   python3 "$SCRIPT_DIR/build_header_svg.py" \
     raw_header.svg \
     "$POST_ASSETS_DIR/spherical-harmonics-header.svg" \
-    sphere_mode0.png sphere_mode1.png sphere_mode2.png
+    sphere_mode0.webp sphere_mode1.webp sphere_mode2.webp
 )
 
 echo "4. Rendering spherical-harmonics-header.png and spherical-harmonics-header-meta.jpg..."
