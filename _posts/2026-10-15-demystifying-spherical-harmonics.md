@@ -264,7 +264,7 @@ The L1 Encoding Rules (projection) are a naive linear fit that does not take the
 
 <div id="sh-diagram-clamped-2d" class="diagram"></div>
 
-A specific example that comes up in graphics are when SH approximations are used to represent reflected/outgoing radiance from a Lambertian/diffuse BRDF. In this case, the direction $$\omega$$ used is a surface normal (because for a given normal, light is equally reflected in all visible directions with this BRDF). If our lighting is a simple directional light, we can *perfectly* represent the Lambertian reflected light using the clamped function, with zero error. But naive SH projection is overly soft, because it's minimizing error for the wrong reconstruction function.
+A specific graphics example might be when SH approximations are used to represent reflected/outgoing radiance from a Lambertian/diffuse BRDF. In this case, the direction $$\omega$$ used is a surface normal (because for a given normal, light is equally reflected in all visible directions with this BRDF). If our lighting is a simple directional light, we can *perfectly* represent the Lambertian reflected light using the clamped function, with zero error. But naive SH projection is overly soft, because it's minimizing error for the wrong reconstruction function.
 
 <div id="sh-diagram-clamped-directional" class="diagram"></div>
 
