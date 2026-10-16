@@ -47,7 +47,7 @@ It might be obvious that you can think of the $$c_0$$ term as an overall intensi
 
 <div id="sh-diagram-linear-approx" class="diagram"></div>
 
-So how do we get these four coefficients? A quick idea might be to use the coefficients that minimize the (sum/average/integrated) square error against the original function or a high-resolution version. In other words, a good old fashioned linear regression. In this code we'll sample some random directions and regress on those.
+So how do we get these four coefficients? A quick idea might be to find the coefficients $$c_0, c_x, c_y, c_z$$. that minimize the (sum/average/integrated) square error $$(\hat{f}(\omega) - f(\omega))^2$$ against the original function or a high-resolution version. In other words, a good old fashioned linear regression. In this code we'll sample some random directions and regress on those.
 
 {% highlight python linenos %}
 def encode_linear_coefficients(spherical_fn, num_dirs=8192, seed=None):
