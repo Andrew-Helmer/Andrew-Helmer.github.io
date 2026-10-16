@@ -254,7 +254,7 @@ Typical applications of spherical harmonics in graphics violate at least one of 
 
 ### Assumption 1 Violations
 
-The first assumption might seem comically obvious - of course the encoding only works for the reconstruction function that it was derived with\! But virtually all SH implementations in graphics violate it. For one thing, there are improvements to spherical harmonics that use different forms of reconstruction, i.e. completely different models. Like the ZH3 hallucination, or the Geomerics reconstruction (this also includes a convolution).
+The first assumption might seem comically obvious - of course the encoding only works for the reconstruction function that it was derived with\! But virtually all SH implementations in graphics violate it. For one thing, there are improvements to spherical harmonics that use different forms of reconstruction, i.e. completely different models, like the Geomerics reconstruction (this also includes a convolution).
 
 But even the most vanilla implementations of SH almost always add a clamp to the reconstruction fuction / approximation model to prevent negative lighting values:
 
