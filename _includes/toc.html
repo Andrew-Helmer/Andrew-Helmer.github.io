@@ -85,8 +85,50 @@
       }
     });
 
+    // Keep sections expanded while mouse is inside the TOC (unless idle for 6s)
+    var isHoveringToc = false;
+    var hoverIdleTimer = null;
+    var IDLE_COLLAPSE_MS = 6000;
+
+    function collapseUnpinnedSections() {
+      var expandedLis = tocNav.querySelectorAll('li.hover-expanded');
+      for (var i = 0; i < expandedLis.length; i++) {
+        expandedLis[i].classList.remove('hover-expanded');
+      }
+      onScroll(true);
+    }
+
+    function resetIdleTimer() {
+      if (hoverIdleTimer) clearTimeout(hoverIdleTimer);
+      hoverIdleTimer = setTimeout(function() {
+        isHoveringToc = false;
+        collapseUnpinnedSections();
+      }, IDLE_COLLAPSE_MS);
+    }
+
+    tocContainer.addEventListener('mouseenter', function() {
+      isHoveringToc = true;
+      resetIdleTimer();
+    });
+
+    tocContainer.addEventListener('mousemove', function(e) {
+      isHoveringToc = true;
+      resetIdleTimer();
+      var li = e.target.closest('li');
+      while (li && tocNav.contains(li)) {
+        li.classList.add('hover-expanded');
+        li = li.parentElement ? li.parentElement.closest('li') : null;
+      }
+    });
+
+    tocContainer.addEventListener('mouseleave', function() {
+      isHoveringToc = false;
+      if (hoverIdleTimer) clearTimeout(hoverIdleTimer);
+      collapseUnpinnedSections();
+    });
+
     // Scrollspy & Auto-Unnesting
-    function onScroll() {
+    function onScroll(forceCollapse) {
       var scrollPos = window.scrollY + 100;
       var currentId = '';
 
@@ -100,6 +142,7 @@
       var isSidebar = window.innerWidth >= 960;
       var allLinks = tocNav.querySelectorAll('a');
       var allNestedUls = tocNav.querySelectorAll('li > ul');
+      var canCollapse = (forceCollapse === true) || !isHoveringToc;
 
       for (var j = 0; j < allLinks.length; j++) {
         allLinks[j].classList.remove('active', 'semi_active');
@@ -112,8 +155,10 @@
         return;
       }
 
-      for (var k = 0; k < allNestedUls.length; k++) {
-        allNestedUls[k].style.display = isSidebar ? 'none' : 'block';
+      if (canCollapse) {
+        for (var k = 0; k < allNestedUls.length; k++) {
+          allNestedUls[k].style.display = isSidebar ? 'none' : 'block';
+        }
       }
 
       var selector = 'a[href="#' + (window.CSS && CSS.escape ? CSS.escape(currentId) : currentId) + '"]';
@@ -145,8 +190,8 @@
     }
 
     window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onScroll, { passive: true });
-    onScroll();
+    window.addEventListener('resize', function() { onScroll(true); }, { passive: true });
+    onScroll(true);
   }
 
   if (document.readyState === 'loading') {

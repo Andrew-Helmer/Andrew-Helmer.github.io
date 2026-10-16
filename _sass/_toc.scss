@@ -102,8 +102,8 @@
     li {
       margin: 5px 0;
 
-      // Expand immediate child sub-list on hover
-      &:hover > ul {
+      // Expand immediate child sub-list when hovered or pinned while inside TOC
+      &.hover-expanded > ul {
         display: block !important;
       }
     }
