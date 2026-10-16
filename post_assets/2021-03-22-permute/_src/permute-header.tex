@@ -22,13 +22,13 @@
 
 \begin{document}
 \begin{tikzpicture}[x=1cm, y=1cm]
-    % Aspect ratio 2.5641 (matching 800 x 312), horizontal center at x = 9.16
-    \path[use as bounding box] (-0.65, -1.55) rectangle (18.97, 6.102);
-    \fill[bg] (-0.65, -1.55) rectangle (18.97, 6.102);
+    % Uniform 0.65-unit margin around the 7-column layout (x: 3.12..15.20, y: -1.00..5.42)
+    \path[use as bounding box] (2.47, -1.65) rectangle (15.85, 6.07);
+    \fill[bg] (2.47, -1.65) rectangle (15.85, 6.07);
 
     % 7 elements (0..6) centered at x = 9.16
-    \def\stepx{2.50}
-    \def\topx{1.16}
+    \def\stepx{1.80}
+    \def\topx{3.26}
     \def\arrw{1.18}
     \def\arrx{5.03}
 
@@ -49,7 +49,7 @@
             (\sx, 4.35) -- (\sx, 3.36);
 
         % Sharp-cornered academic function box with p(i)
-        \drawrect{mutedbox, line width=1.15pt, line join=miter}{\sx - 0.68}{2.50}{\sx + 0.68}{3.28}
+        \drawrect{mutedbox, line width=1.15pt, line join=miter}{\sx - 0.64}{2.50}{\sx + 0.64}{3.28}
         \node[color=muteddigit, font=\large, scale=1.22, anchor=center]
             at (\sx, 2.88) {$p(\i)$};
 
@@ -90,7 +90,7 @@
         (\sxTwo, 4.35) -- (\sxTwo, 3.36);
 
     % Highlighted sharp-cornered function box
-    \drawrect{swapcyan, line width=1.4pt, line join=miter}{\sxTwo - 0.68}{2.50}{\sxTwo + 0.68}{3.28}
+    \drawrect{swapcyan, line width=1.4pt, line join=miter}{\sxTwo - 0.64}{2.50}{\sxTwo + 0.64}{3.28}
     \node[color=swapcyan, font=\large, scale=1.22, anchor=center]
         at (\sxTwo, 2.88) {$p(2)$};
 

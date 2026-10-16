@@ -7,11 +7,11 @@ out_svg_path = sys.argv[2]
 with open(raw_svg_path, "r", encoding="utf-8") as f:
     svg = f.read()
 
-# Set display width/height to 600pt x 234pt (800px x 312px in CSS pixels),
-# matching the tree-shuffling header image's intrinsic layout size.
+# Set display height to 234pt (312px in CSS pixels, matching owen-shuffling.svg)
+# and proportional width 405.60pt (541px) for the 13.38 x 7.72 bounding box.
 svg = re.sub(
     r"width='([0-9.]+)pt' height='([0-9.]+)pt'",
-    "width='600.00pt' height='234.00pt'",
+    "width='405.60pt' height='234.00pt'",
     svg,
     count=1,
 )
