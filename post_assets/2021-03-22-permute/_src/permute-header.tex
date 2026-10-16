@@ -44,18 +44,18 @@
         \node[color=muteddigit, scale=1.85, anchor=center]
             at (\sx, 4.90) {$\i$};
 
-        % Vertical stem into isolated stateless function box
+        % Vertical stem into isolated stateless function box (precisely touching boundaries)
         \draw[mutedline, line width=1.3pt, -{Stealth[length=6.0pt, width=4.8pt, inset=1.2pt]}]
-            (\sx, 4.35) -- (\sx, 3.36);
+            (\sx, 4.40) -- (\sx, 3.30);
 
         % Sharp-cornered academic function box with p(i)
         \drawrect{mutedbox, line width=1.15pt, line join=miter}{\sx - 0.64}{2.50}{\sx + 0.64}{3.28}
         \node[color=muteddigit, font=\large, scale=1.22, anchor=center]
             at (\sx, 2.88) {$p(\i)$};
 
-        % Bijection curve to target array slot
+        % Bijection curve to target array slot (precisely touching boundaries)
         \draw[mutedline, line width=1.3pt, -{Stealth[length=6.5pt, width=5.1pt, inset=1.3pt]}]
-            (\sx, 2.43) .. controls (\sx, 1.15) and (\tx, 1.35) .. (\tx, 0.08);
+            (\sx, 2.48) .. controls (\sx, 1.15) and (\tx, 1.35) .. (\tx, 0.025);
     }
 
     % Target contiguous 7-element array at the bottom: y from -1.0 to 0.0
@@ -85,18 +85,18 @@
     \node[color=digitcolor, scale=1.85, anchor=center]
         at (\sxTwo, 4.90) {$2$};
 
-    % Cyan vertical stem into isolated function box
+    % Cyan vertical stem into isolated function box (precisely touching boundaries)
     \draw[swapcyan, line width=1.8pt, -{Stealth[length=7.4pt, width=5.9pt, inset=1.5pt]}]
-        (\sxTwo, 4.35) -- (\sxTwo, 3.36);
+        (\sxTwo, 4.395) -- (\sxTwo, 3.305);
 
     % Highlighted sharp-cornered function box
     \drawrect{swapcyan, line width=1.4pt, line join=miter}{\sxTwo - 0.64}{2.50}{\sxTwo + 0.64}{3.28}
     \node[color=swapcyan, font=\large, scale=1.22, anchor=center]
         at (\sxTwo, 2.88) {$p(2)$};
 
-    % Cyan curve to target array cell 5
+    % Cyan curve to target array cell 5 (precisely touching boundaries)
     \draw[swapcyan, line width=1.95pt, -{Stealth[length=8.5pt, width=6.8pt, inset=1.7pt]}]
-        (\sxTwo, 2.43) .. controls (\sxTwo, 1.15) and (\txFive, 1.35) .. (\txFive, 0.08);
+        (\sxTwo, 2.475) .. controls (\sxTwo, 1.15) and (\txFive, 1.35) .. (\txFive, 0.025);
 
 \end{tikzpicture}
 \end{document}
