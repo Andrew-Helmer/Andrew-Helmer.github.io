@@ -305,6 +305,42 @@ footer {
   left: -0.23em !important;
 }
 
+// Display equations (KaTeX blocks on their own line)
+// Gives equations an invisible scroll container so wide equations scroll horizontally
+// instead of forcing the mobile page/viewport to expand and creating side whitespace.
+// Uses flex with auto margins and safe-center so equations remain centered when they fit,
+// but align left with smooth rightward scrolling if they overflow.
+.katex-display {
+  display: flex;
+  justify-content: safe center;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+  padding: 6px 0;
+  margin: 1em 0;
+  scrollbar-width: thin;
+  scrollbar-color: $border transparent;
+
+  &::-webkit-scrollbar {
+    height: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: $border;
+    border-radius: 2px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  > .katex {
+    margin: 0 auto;
+    flex-shrink: 0;
+  }
+}
+
 .callout-box {
   width: fit-content;
   max-width: 100%;
