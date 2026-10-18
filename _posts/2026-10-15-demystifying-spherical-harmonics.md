@@ -276,11 +276,11 @@ I won't go into too much detail here, but least squares error is rarely ideal fo
 
 ### Assumption 3 Violations
 
-Finally, IMO the most important mistake is using SH projection (the fast encoding rules) when your function domain is not a sphere. A very common domain is a *hemisphere*, for example when generating directional lightmaps. This can actually lead to meaningful bias, ending up too bright even for a completely flat surface where we should be matching non-directional lightmaps.
+Finally, in my opinion the most important mistake is using SH projection (the fast encoding rules) when your function domain is not a sphere. A very common domain is a *hemisphere*, for example when generating directional lightmaps. This can actually lead to large bias, ending up significantly too bright even for a completely flat surface where we should be matching non-directional lightmaps.
 
 <div id="sh-diagram-hemisphere-bias" class="diagram"></div>
 
-In addition to hemispherical domains, sometimes you might want to do things like optimize lighting for the points on the surface of a model. A good fallback here is to use standard linear regression like in the very first Python example.
+In addition to hemispherical domains, sometimes you might want to do things like optimize lighting for the points on the surface of a model. A good fallback in these cases is to use standard linear regression like in the very first Python example.
 
 In practice, these assumption violations may or may not be important problems in your application, but I have seen significant improvements to visual quality by addressing them.
 
