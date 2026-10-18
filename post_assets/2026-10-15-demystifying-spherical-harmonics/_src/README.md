@@ -29,14 +29,15 @@ Running `build_header.sh` automatically updates all three output files in `post_
 
 ## 2. How the Header Image Pipeline Works
 
-1. **HDR Probe Decoding (`../pantheon-hdr.webp`):**
+1. **HDR Probe Pole Un-Pinching & Decoding (`fix_poles.cpp`, `pantheon-hdr-raw.webp` $\to$ `../pantheon-hdr.webp`):**
    - `pantheon-hdr.webp` is a 1024×512 lossless 8-bit WebP storing log-encoded luminance values (`LOG_EPS = 0.002`, `LOG_MAX_LUM = 12.15625`).
+   - `fix_poles.cpp` reads the raw AI-generated probe (`pantheon-hdr-raw.webp` decoded to PPM), removes the equirectangular North Pole ($+y$, ceiling) and South Pole ($-y$, floor) pinching artifacts with 4×4 supersampling per polar texel, and outputs the corrected probe encoded as `../pantheon-hdr.webp` (`cwebp -lossless -m 6`).
    - `build_header.sh` decodes `../pantheon-hdr.webp` into a temporary PPM via `dwebp`.
 
 2. **3D Sphere Raytracing (`render_spheres.cpp`):**
    - Matches the exact WebGL2 fragment shader in `initPantheonFitDiagram` (`../sh-diagrams.js`), including:
      - Camera orientation (`uYaw = 0.38`, `uPitch = 0.32`, `uDist = 2.85`, `tanFov = 0.382`)
-     - Exact L1 SH coefficients of the Pantheon probe: `[0.317151, 0.064818, 0.355999, -0.029964]`
+     - Exact L1 SH coefficients of the Pantheon probe: `[0.316699, 0.064990, 0.357348, -0.029922]`
      - Frostbite photographic display mapper (`rangeCompress(val, 0.25)`) and `1 / 2.2` gamma correction
      - Analytical silhouette anti-aliasing (`smoothstep`) + 4×4 supersampling per pixel
    - Outputs three 560×560 unpremultiplied RGB PPMs (`sphere_mode{0,1,2}.ppm`) and exact coverage alpha masks (`sphere_mode{0,1,2}_alpha.pgm`), which `magick` combines into 32-bit transparent RGBA PNGs (`sphere_mode{0,1,2}.png`):
