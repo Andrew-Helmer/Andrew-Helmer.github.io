@@ -111,8 +111,8 @@ int main(int argc, char** argv) {
   };
 
   // Precomputed L1 SH coefficients of the Pantheon HDR probe (from assets/sh-diagrams.js)
-  const double c0 = 0.316699;
-  const Vec3 cVec(0.064990, 0.357348, -0.029922);
+  const double c0 = 0.317246;
+  const Vec3 cVec(0.064900, 0.356734, -0.029905);
 
   // Camera parameters matching initPantheonFitDiagram in assets/sh-diagrams.js
   const double uYaw = 0.38;

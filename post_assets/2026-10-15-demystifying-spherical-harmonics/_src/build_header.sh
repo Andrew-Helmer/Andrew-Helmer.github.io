@@ -8,10 +8,12 @@ BUILD_DIR="$(mktemp -d)"
 trap 'rm -rf "$BUILD_DIR"' EXIT
 
 echo "1. Decoding and un-pinching pantheon-hdr.webp..."
-if [ -f "$SCRIPT_DIR/pantheon-hdr-raw.webp" ]; then
+if [ -f "$SCRIPT_DIR/pantheon-hdr-raw.webp" ] && [ -f "$SCRIPT_DIR/cube_top_gen.webp" ] && [ -f "$SCRIPT_DIR/cube_bot_gen.webp" ]; then
   dwebp "$SCRIPT_DIR/pantheon-hdr-raw.webp" -ppm -o "$BUILD_DIR/pantheon_raw.ppm" >/dev/null 2>&1
+  dwebp "$SCRIPT_DIR/cube_top_gen.webp" -ppm -o "$BUILD_DIR/cube_top_gen.ppm" >/dev/null 2>&1
+  dwebp "$SCRIPT_DIR/cube_bot_gen.webp" -ppm -o "$BUILD_DIR/cube_bot_gen.ppm" >/dev/null 2>&1
   clang++ -O3 -std=c++17 "$SCRIPT_DIR/fix_poles.cpp" -o "$BUILD_DIR/fix_poles"
-  "$BUILD_DIR/fix_poles" "$BUILD_DIR/pantheon_raw.ppm" "$BUILD_DIR/pantheon.ppm" >/dev/null
+  "$BUILD_DIR/fix_poles" "$BUILD_DIR/pantheon_raw.ppm" "$BUILD_DIR/cube_top_gen.ppm" "$BUILD_DIR/cube_bot_gen.ppm" "$BUILD_DIR/pantheon.ppm" >/dev/null
   cwebp -lossless -m 6 "$BUILD_DIR/pantheon.ppm" -o "$POST_ASSETS_DIR/pantheon-hdr.webp" >/dev/null 2>&1
 else
   dwebp "$POST_ASSETS_DIR/pantheon-hdr.webp" -ppm -o "$BUILD_DIR/pantheon.ppm" >/dev/null 2>&1

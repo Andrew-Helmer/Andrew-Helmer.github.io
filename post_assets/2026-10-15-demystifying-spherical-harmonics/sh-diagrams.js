@@ -1113,7 +1113,7 @@
     };
 
     // Precomputed exact L1 SH projection of the Pantheon HDR probe
-    const PANTHEON_L1_COEFFS = [0.316699, 0.064990, 0.357348, -0.029922];
+    const PANTHEON_L1_COEFFS = [0.317246, 0.064900, 0.356734, -0.029905];
 
     const DEFAULT_YAW = 0.38;
     const DEFAULT_PITCH = 0.32;
