@@ -280,7 +280,11 @@ Finally, in my opinion the most important mistake is using SH projection (the fa
 
 <div id="sh-diagram-hemisphere-bias" class="diagram"></div>
 
-In addition to hemispherical domains, sometimes you might want to do things like optimize lighting for the points on the surface of a model. A good fallback in these cases is to use standard linear regression like in the very first Python example.
+Sometimes this is handled by (often, implicitly) treating the lower hemisphere as black. But this is not correct either. It creates fake directionality. The radiance in the normal direction gets too bright, while getting too dark near the horizons. If you're calculating Lambertian diffuse, this can end up too dark or too bright in different scenarios.
+
+In addition to hemispherical domains, sometimes you might want to do things like optimize lighting for the points on the surface of a model.
+
+A simple fallback in these non-sphere cases is to use standard linear regression like in the very first Python example. There is a closed form analytical adjustment for the hemisphere case, but it gets more complicated if you want to then convolve incoming radiance to outgoing/reflected radiance (there's a deeper question about conceptually what it means for your BRDF to extend below the horizon and how you should handle that).
 
 In practice, these assumption violations may or may not be important problems in your application, but I have seen significant improvements to visual quality by addressing them.
 
