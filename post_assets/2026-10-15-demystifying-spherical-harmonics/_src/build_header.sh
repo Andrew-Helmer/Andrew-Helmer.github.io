@@ -7,13 +7,13 @@ POST_ASSETS_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 BUILD_DIR="$(mktemp -d)"
 trap 'rm -rf "$BUILD_DIR"' EXIT
 
-echo "1. Decoding and un-pinching pantheon-hdr.webp..."
-if [ -f "$SCRIPT_DIR/pantheon-hdr-raw.webp" ] && [ -f "$SCRIPT_DIR/cube_top_gen.webp" ] && [ -f "$SCRIPT_DIR/cube_bot_gen.webp" ]; then
-  dwebp "$SCRIPT_DIR/pantheon-hdr-raw.webp" -ppm -o "$BUILD_DIR/pantheon_raw.ppm" >/dev/null 2>&1
-  dwebp "$SCRIPT_DIR/cube_top_gen.webp" -ppm -o "$BUILD_DIR/cube_top_gen.ppm" >/dev/null 2>&1
-  dwebp "$SCRIPT_DIR/cube_bot_gen.webp" -ppm -o "$BUILD_DIR/cube_bot_gen.ppm" >/dev/null 2>&1
-  clang++ -O3 -std=c++17 "$SCRIPT_DIR/fix_poles.cpp" -o "$BUILD_DIR/fix_poles"
-  "$BUILD_DIR/fix_poles" "$BUILD_DIR/pantheon_raw.ppm" "$BUILD_DIR/cube_top_gen.ppm" "$BUILD_DIR/cube_bot_gen.ppm" "$BUILD_DIR/pantheon.ppm" >/dev/null
+echo "1. Decoding and building Rome Pantheon HDR probe (pantheon-hdr.webp)..."
+if [ -f "$SCRIPT_DIR/rome_dome_top.webp" ] && [ -f "$SCRIPT_DIR/rome_wall_equirect.webp" ] && [ -f "$SCRIPT_DIR/rome_floor_bot.webp" ]; then
+  dwebp "$SCRIPT_DIR/rome_dome_top.webp" -ppm -o "$BUILD_DIR/rome_dome_top.ppm" >/dev/null 2>&1
+  dwebp "$SCRIPT_DIR/rome_wall_equirect.webp" -ppm -o "$BUILD_DIR/rome_wall_equirect.ppm" >/dev/null 2>&1
+  dwebp "$SCRIPT_DIR/rome_floor_bot.webp" -ppm -o "$BUILD_DIR/rome_floor_bot.ppm" >/dev/null 2>&1
+  clang++ -O3 -std=c++17 "$SCRIPT_DIR/build_rome_probe.cpp" -o "$BUILD_DIR/build_rome_probe"
+  "$BUILD_DIR/build_rome_probe" "$BUILD_DIR/rome_dome_top.ppm" "$BUILD_DIR/rome_wall_equirect.ppm" "$BUILD_DIR/rome_floor_bot.ppm" "$BUILD_DIR/pantheon.ppm" >/dev/null
   cwebp -lossless -m 6 "$BUILD_DIR/pantheon.ppm" -o "$POST_ASSETS_DIR/pantheon-hdr.webp" >/dev/null 2>&1
 else
   dwebp "$POST_ASSETS_DIR/pantheon-hdr.webp" -ppm -o "$BUILD_DIR/pantheon.ppm" >/dev/null 2>&1
