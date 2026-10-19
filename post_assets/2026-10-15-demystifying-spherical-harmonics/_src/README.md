@@ -40,12 +40,12 @@ Running `build_header.sh` automatically updates all three output files in `post_
 
 2. **SH Coefficient Calculation (`compute_sh_coeffs.py`):**
    - Zero-dependency Python 3 script that decodes `../pantheon-hdr.webp` (via `dwebp`), applies the inverse log-luminance lookup table, and integrates the exact solid-angle weighted spherical averages $\langle \cdot \rangle_\Omega$ over the equirectangular grid.
-   - Outputs both the L1 coefficients (`[0.095252, 0.087969, 0.184707, 0.049513]`) and the L2 Orthogonal & Fast Reconstruction Form (FRF) coefficients used in `../sh-diagrams.js` (`initPantheonFitDiagram` and `initPantheonL2FitDiagram`).
+   - Outputs both the L1 coefficients (`[0.098258, 0.045660, 0.179691, 0.033978]`) and the L2 Orthogonal & Fast Reconstruction Form (FRF) coefficients used in `../sh-diagrams.js` (`initPantheonFitDiagram` and `initPantheonL2FitDiagram`).
 
 3. **3D Sphere Raytracing (`render_spheres.cpp`):**
    - Matches the exact WebGL2 fragment shader in `initPantheonFitDiagram` (`../sh-diagrams.js`), including:
      - Camera orientation (`uYaw = 0.38`, `uPitch = 0.32`, `uDist = 2.85`, `tanFov = 0.382`)
-     - Exact L1 SH coefficients of the Pantheon probe: `[0.095252, 0.087969, 0.184707, 0.049513]`
+     - Exact L1 SH coefficients of the Pantheon probe: `[0.098258, 0.045660, 0.179691, 0.033978]`
      - Frostbite photographic display mapper (`rangeCompress(val, 0.25)`) and `1 / 2.2` gamma correction
      - Analytical silhouette anti-aliasing (`smoothstep`) + 4×4 supersampling per pixel
    - Outputs three 560×560 unpremultiplied RGB PPMs (`sphere_mode{0,1,2}.ppm`) and exact coverage alpha masks (`sphere_mode{0,1,2}_alpha.pgm`), which `magick` combines into 32-bit transparent RGBA PNGs (`sphere_mode{0,1,2}.png`):
