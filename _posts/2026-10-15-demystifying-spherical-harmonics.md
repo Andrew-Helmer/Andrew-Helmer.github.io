@@ -244,10 +244,10 @@ For a long time I found spherical harmonics a bit scary. Personally, derived thi
 
 ## Questioning Our Assumptions
 
-Now that we've derived the fast encoding, let's reconsider some important assumptions we made for this fast encoding to be the least-squares solution.
+Now that we've derived the fast encoding, let's reconsider some important assumptions we made for this fast encoding to be an optimal solution.
 
 1. Our reconstruction function is $$\hat{f}(\omega) = c_0 + c_x \omega_x + c_y \omega_y + c_z \omega_z$$  
-1. We want to minimize least squares error, not some other error.  
+1. We want to minimize the squared error over our domain.  
 1. Our function or optimization domain is uniformly distributed around the unit sphere, in all directions.
 
 Typical applications of spherical harmonics in graphics violate at least one of these assumptions, sometimes two, often all three. Even when the assumptions are violated, spherical harmonics are still usually pretty good *in practice*, but sometimes the issues can be significant.
