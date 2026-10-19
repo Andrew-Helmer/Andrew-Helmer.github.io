@@ -34,7 +34,11 @@ Running `build_header.sh` automatically updates all three output files in `post_
    - `fix_poles.cpp` extracts 1024×1024 rectilinear cubemap faces (`tanHalfFov = 0.75`) for the North Pole ($+y$, ceiling) and South Pole ($-y$, floor) using an analytically invertible Reinhard photographic tone-mapping operator, harmonically blends the AI-regenerated un-pinched cubemap faces (`cube_top_gen.webp` and `cube_bot_gen.webp`) via Laplace membrane interpolation, and inverts the tone map with 4×4 supersampling per polar texel to produce `../pantheon-hdr.webp` (`cwebp -lossless -m 6`).
    - `build_header.sh` decodes `../pantheon-hdr.webp` into a temporary PPM via `dwebp`.
 
-2. **3D Sphere Raytracing (`render_spheres.cpp`):**
+2. **SH Coefficient Calculation (`compute_sh_coeffs.py`):**
+   - Zero-dependency Python 3 script that decodes `../pantheon-hdr.webp` (via `dwebp`), applies the inverse log-luminance lookup table, and integrates the exact solid-angle weighted spherical averages $\langle \cdot \rangle_\Omega$ over the equirectangular grid.
+   - Outputs both the L1 coefficients (`[0.317245, 0.064901, 0.356733, -0.029905]`) and the L2 Orthogonal & Fast Reconstruction Form (FRF) coefficients used in `../sh-diagrams.js` (`initPantheonFitDiagram` and `initPantheonL2FitDiagram`).
+
+3. **3D Sphere Raytracing (`render_spheres.cpp`):**
    - Matches the exact WebGL2 fragment shader in `initPantheonFitDiagram` (`../sh-diagrams.js`), including:
      - Camera orientation (`uYaw = 0.38`, `uPitch = 0.32`, `uDist = 2.85`, `tanFov = 0.382`)
      - Exact L1 SH coefficients of the Pantheon probe: `[0.317246, 0.064900, 0.356734, -0.029905]`
@@ -45,7 +49,7 @@ Running `build_header.sh` automatically updates all three output files in `post_
      - `mode 1`: Clamped L1 SH approximation $\hat{f}(\omega)$
      - `mode 2`: Absolute error $\lvert\hat{f}(\omega) - f(\omega)\rvert$, tinted red (`vec3(ldr, ldr * 0.16, ldr * 0.12)`)
 
-3. **LaTeX Layout & Vector Math (`spherical-harmonics-header.tex`):**
+4. **LaTeX Layout & Vector Math (`spherical-harmonics-header.tex`):**
    - Uses `standalone` + `tikz` + `amsmath` + `mathtools`.
    - When compiled with `pdflatex` (`\pdfoutput > 0`), it embeds `sphere_mode{0,1,2}.png` directly via `\includegraphics`.
    - When compiled with `latex` (`\pdfoutput = 0`), it uses `\def\pgfsysdriver{pgfsys-dvisvgm.def}` and draws three placeholder marker squares (`#010101`, `#020202`, `#030303`).

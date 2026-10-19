@@ -1071,9 +1071,8 @@
         float ldr = pow(clamp(mapped, 0.0, 1.0), 1.0 / 2.2);
         col = vec3(ldr);
       } else if (uViewMode == 1) {
-        // L1 SH approximation with negative values clamped to black
-        float mapped = rangeCompress(max(0.0, shRaw), 0.25);
-        float ldr = pow(clamp(mapped, 0.0, 1.0), 1.0 / 2.2);
+        // L1 SH approximation with negative values clamped to black (no tonemapping)
+        float ldr = pow(clamp(shRaw, 0.0, 1.0), 1.0 / 2.2);
         col = vec3(ldr);
       } else {
         // Absolute error |f(w) - f_hat(w)| compressed with Frostbite rangeCompress -> red
@@ -1256,6 +1255,380 @@
     btnProj.addEventListener("click", () => setViewMode(0));
     btnSH.addEventListener("click", () => setViewMode(1));
     btnErr.addEventListener("click", () => setViewMode(2));
+
+    if ("IntersectionObserver" in window) {
+      const io = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            isVisible = entry.isIntersecting;
+            if (isVisible) requestRender();
+          }
+        },
+        { threshold: 0.01 }
+      );
+      io.observe(container);
+    } else {
+      isVisible = true;
+      requestRender();
+    }
+
+    if ("ResizeObserver" in window) {
+      const ro = new ResizeObserver(() => {
+        requestRender();
+      });
+      ro.observe(stage);
+    } else {
+      window.addEventListener("resize", requestRender, { passive: true });
+    }
+  }
+
+  function initPantheonL2FitDiagram(container) {
+    const stage = document.createElement("div");
+    stage.className = "diagram-stage";
+
+    const canvas = document.createElement("canvas");
+    canvas.className = "diagram-canvas";
+    stage.appendChild(canvas);
+
+    const axesGizmo = createAxesSVG();
+    stage.appendChild(axesGizmo.svg);
+
+    const controls = document.createElement("div");
+    controls.className = "diagram-controls";
+
+    const toggleGroup = document.createElement("div");
+    toggleGroup.className = "segmented-toggle";
+    toggleGroup.setAttribute("role", "group");
+    toggleGroup.setAttribute("aria-label", "L2 spherical harmonics comparison view");
+
+    const btnProj = document.createElement("button");
+    btnProj.type = "button";
+    btnProj.className = "toggle-btn";
+    btnProj.textContent = "Original";
+
+    const btnL1 = document.createElement("button");
+    btnL1.type = "button";
+    btnL1.className = "toggle-btn";
+    btnL1.textContent = "L1 Approximation";
+
+    const btnSH = document.createElement("button");
+    btnSH.type = "button";
+    btnSH.className = "toggle-btn active";
+    btnSH.textContent = "L2 Approximation";
+
+    toggleGroup.appendChild(btnProj);
+    toggleGroup.appendChild(btnL1);
+    toggleGroup.appendChild(btnSH);
+    controls.appendChild(toggleGroup);
+
+    container.innerHTML = "";
+    container.appendChild(stage);
+    container.appendChild(controls);
+
+    const gl = canvas.getContext("webgl2", {
+      alpha: true,
+      premultipliedAlpha: true,
+      antialias: true,
+      powerPreference: "low-power"
+    });
+
+    if (!gl) {
+      stage.innerHTML =
+        '<p class="webgl-fallback">WebGL2 is required to view this interactive diagram.</p>';
+      return;
+    }
+
+    gl.getExtension("OES_texture_float_linear");
+
+    const vsSource = `#version 300 es
+    out vec2 vUV;
+    void main() {
+      vec2 pos = vec2((gl_VertexID << 1) & 2, gl_VertexID & 2);
+      vUV = pos;
+      gl_Position = vec4(pos * 2.0 - 1.0, 0.0, 1.0);
+    }`;
+
+    const fsSource = `#version 300 es
+    precision highp float;
+    in vec2 vUV;
+    out vec4 fragColor;
+
+    uniform sampler2D uEnvMap;
+    uniform vec2 uResolution;
+    uniform float uYaw;
+    uniform float uPitch;
+    uniform float uDist;
+    uniform int uViewMode; // 0 = Spherical Projection, 1 = L1 SH Approximation, 2 = L2 SH Approximation
+    uniform float uCoeffs[9]; // (c00, c1_1, c10, c11, c2_2, c2_1, c20, c21, c22)
+
+    const float PI = 3.14159265358979323846;
+
+    vec2 dirToEquirectUV(vec3 dir) {
+      vec3 d = normalize(dir);
+      float phi = atan(d.z, d.x);
+      float theta = asin(clamp(d.y, -1.0, 1.0));
+      return vec2(phi / (2.0 * PI) + 0.5, 0.5 - theta / PI);
+    }
+
+    float sampleEquirectLum(vec3 dir) {
+      return textureLod(uEnvMap, dirToEquirectUV(dir), 0.0).r;
+    }
+
+    // Frostbite exponential ("Photographic") luma range compression
+    float rangeCompress(float x) {
+      return 1.0 - exp(-x);
+    }
+
+    float rangeCompress(float val, float threshold) {
+      float v1 = val;
+      float v2 = threshold + (1.0 - threshold) * rangeCompress((val - threshold) / (1.0 - threshold));
+      return val < threshold ? v1 : v2;
+    }
+
+    void main() {
+      vec2 ndc = vUV * 2.0 - 1.0;
+      float aspect = uResolution.x / uResolution.y;
+      ndc.x *= aspect;
+
+      const float tanFov = 0.40;
+
+      float cp = cos(uPitch), sp = sin(uPitch);
+      float cy = cos(uYaw),   sy = sin(uYaw);
+      vec3 camForward = normalize(vec3(-sy * cp, -sp, -cy * cp));
+      vec3 worldUp = vec3(0.0, 1.0, 0.0);
+      vec3 camRight = normalize(cross(camForward, worldUp));
+      vec3 camUp = cross(camRight, camForward);
+
+      vec3 ro = -camForward * uDist;
+      vec3 rd = normalize(camForward + ndc.x * tanFov * camRight + ndc.y * tanFov * camUp);
+
+      float b = dot(ro, rd);
+      float c = dot(ro, ro) - 1.0;
+      float h = b * b - c;
+
+      float distFromCenter = sqrt(max(0.0, 1.0 - h));
+      float pixelRadius = (2.0 * tanFov * uDist) / uResolution.y;
+      float coverage = 1.0 - smoothstep(1.0 - pixelRadius * 0.75, 1.0 + pixelRadius * 0.75, distFromCenter);
+
+      if (coverage <= 0.0) {
+        fragColor = vec4(0.0);
+        return;
+      }
+
+      float clampedH = max(0.0, h);
+      float t = -b - sqrt(clampedH);
+      vec3 pos = ro + t * rd;
+      vec3 n = normalize(pos);
+
+      float rawLum = sampleEquirectLum(n);
+      float shL1Raw =
+        uCoeffs[0] +
+        uCoeffs[1] * n.y +
+        uCoeffs[2] * n.z +
+        uCoeffs[3] * n.x;
+      float shL2Raw =
+        shL1Raw +
+        uCoeffs[4] * (n.x * n.y) +
+        uCoeffs[5] * (n.y * n.z) +
+        uCoeffs[6] * (3.0 * n.z * n.z - 1.0) +
+        uCoeffs[7] * (n.x * n.z) +
+        uCoeffs[8] * (n.x * n.x - n.y * n.y);
+
+      vec3 col;
+      if (uViewMode == 0) {
+        // Pure spherical projection (no Lambertian shading)
+        float mapped = rangeCompress(rawLum, 0.25);
+        float ldr = pow(clamp(mapped, 0.0, 1.0), 1.0 / 2.2);
+        col = vec3(ldr);
+      } else if (uViewMode == 1) {
+        // L1 SH approximation with negative values clamped to black (no tonemapping)
+        float ldr = pow(clamp(shL1Raw, 0.0, 1.0), 1.0 / 2.2);
+        col = vec3(ldr);
+      } else {
+        // L2 SH approximation with negative values clamped to black (no tonemapping)
+        float ldr = pow(clamp(shL2Raw, 0.0, 1.0), 1.0 / 2.2);
+        col = vec3(ldr);
+      }
+
+      fragColor = vec4(col * coverage, coverage);
+    }`;
+
+    function compileShader(type, src) {
+      const s = gl.createShader(type);
+      gl.shaderSource(s, src);
+      gl.compileShader(s);
+      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+        console.error(gl.getShaderInfoLog(s));
+      }
+      return s;
+    }
+
+    const prog = gl.createProgram();
+    gl.attachShader(prog, compileShader(gl.VERTEX_SHADER, vsSource));
+    gl.attachShader(prog, compileShader(gl.FRAGMENT_SHADER, fsSource));
+    gl.linkProgram(prog);
+
+    const vao = gl.createVertexArray();
+    const uLocs = {
+      envMap: gl.getUniformLocation(prog, "uEnvMap"),
+      resolution: gl.getUniformLocation(prog, "uResolution"),
+      yaw: gl.getUniformLocation(prog, "uYaw"),
+      pitch: gl.getUniformLocation(prog, "uPitch"),
+      dist: gl.getUniformLocation(prog, "uDist"),
+      viewMode: gl.getUniformLocation(prog, "uViewMode"),
+      coeffs: gl.getUniformLocation(prog, "uCoeffs[0]")
+    };
+
+    // Precomputed exact L2 Orthogonal SH projection of the Pantheon HDR probe
+    // (c_{0,0}, c_{1,-1}, c_{1,0}, c_{1,1}, c_{2,-2}, c_{2,-1}, c_{2,0}, c_{2,1}, c_{2,2})
+    // Generated via _src/compute_sh_coeffs.py
+    const PANTHEON_L2_COEFFS = new Float32Array([
+      0.317245,
+      0.356733,
+      -0.029905,
+      0.064901,
+      0.047246,
+      -0.054019,
+      0.034938,
+      0.024092,
+      -0.020861
+    ]);
+
+    const DEFAULT_YAW = 0.38;
+    const DEFAULT_PITCH = 0.32;
+    let envTexture = null;
+    let yaw = DEFAULT_YAW;
+    let pitch = DEFAULT_PITCH;
+    const dist = 2.85;
+    let viewMode = 2; // 0 = Spherical Projection, 1 = L1 SH Approximation, 2 = L2 SH Approximation
+    let isVisible = false;
+    let rafId = null;
+
+    axesGizmo.update(yaw, pitch);
+
+    function renderFrame() {
+      rafId = null;
+      if (!isVisible || !envTexture) return;
+
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const rect = stage.getBoundingClientRect();
+      const w = Math.max(1, Math.round(rect.width * dpr));
+      const h = Math.max(1, Math.round(rect.height * dpr));
+
+      if (canvas.width !== w || canvas.height !== h) {
+        canvas.width = w;
+        canvas.height = h;
+      }
+
+      gl.viewport(0, 0, w, h);
+      gl.clearColor(0.0, 0.0, 0.0, 0.0);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+
+      gl.useProgram(prog);
+      gl.bindVertexArray(vao);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, envTexture);
+
+      gl.uniform1i(uLocs.envMap, 0);
+      gl.uniform2f(uLocs.resolution, w, h);
+      gl.uniform1f(uLocs.yaw, yaw);
+      gl.uniform1f(uLocs.pitch, pitch);
+      gl.uniform1f(uLocs.dist, dist);
+      gl.uniform1i(uLocs.viewMode, viewMode);
+      gl.uniform1fv(uLocs.coeffs, PANTHEON_L2_COEFFS);
+
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+    }
+
+    function requestRender() {
+      if (rafId === null && isVisible && envTexture) {
+        rafId = requestAnimationFrame(renderFrame);
+      }
+    }
+
+    loadPantheonHDR()
+      .then((hdr) => {
+        const t = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, t);
+        gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+        gl.texImage2D(
+          gl.TEXTURE_2D,
+          0,
+          gl.R16F,
+          hdr.width,
+          hdr.height,
+          0,
+          gl.RED,
+          gl.FLOAT,
+          hdr.data
+        );
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        envTexture = t;
+        requestRender();
+      })
+      .catch((err) => {
+        console.error("Error loading HDR light probe:", err);
+      });
+
+    let dragging = false;
+    let lastX = 0;
+    let lastY = 0;
+
+    canvas.addEventListener("pointerdown", (e) => {
+      if (e.button !== 0 && e.pointerType === "mouse") return;
+      dragging = true;
+      lastX = e.clientX;
+      lastY = e.clientY;
+      canvas.setPointerCapture(e.pointerId);
+    });
+
+    canvas.addEventListener("pointermove", (e) => {
+      if (!dragging) return;
+      const dx = e.clientX - lastX;
+      const dy = e.clientY - lastY;
+      lastX = e.clientX;
+      lastY = e.clientY;
+
+      yaw -= dx * 0.007;
+      pitch = Math.max(-1.45, Math.min(1.45, pitch + dy * 0.007));
+
+      axesGizmo.update(yaw, pitch);
+      requestRender();
+    });
+
+    function endDrag(e) {
+      if (!dragging) return;
+      dragging = false;
+      if (e && e.pointerId !== undefined && canvas.hasPointerCapture(e.pointerId)) {
+        canvas.releasePointerCapture(e.pointerId);
+      }
+    }
+
+    canvas.addEventListener("pointerup", endDrag);
+    canvas.addEventListener("pointercancel", endDrag);
+
+    canvas.addEventListener("dblclick", () => {
+      yaw = DEFAULT_YAW;
+      pitch = DEFAULT_PITCH;
+      axesGizmo.update(yaw, pitch);
+      requestRender();
+    });
+
+    function setViewMode(mode) {
+      if (viewMode === mode) return;
+      viewMode = mode;
+      btnProj.classList.toggle("active", mode === 0);
+      btnL1.classList.toggle("active", mode === 1);
+      btnSH.classList.toggle("active", mode === 2);
+      requestRender();
+    }
+
+    btnProj.addEventListener("click", () => setViewMode(0));
+    btnL1.addEventListener("click", () => setViewMode(1));
+    btnSH.addEventListener("click", () => setViewMode(2));
 
     if ("IntersectionObserver" in window) {
       const io = new IntersectionObserver(
@@ -2303,6 +2676,9 @@
 
     const el6 = document.getElementById("sh-diagram-hemisphere-bias");
     if (el6) initHemisphereBiasDiagram(el6);
+
+    const el7 = document.getElementById("sh-diagram-pantheon-fit-l2");
+    if (el7) initPantheonL2FitDiagram(el7);
   }
 
   if (document.readyState === "loading") {

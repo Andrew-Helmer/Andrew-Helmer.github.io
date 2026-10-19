@@ -504,6 +504,10 @@ $$
 
 Now we can see that there is a comforting similarity between the encoding and reconstruction, where we are still just "projecting" the original function onto each term of the reconstruction approximation, and multiplying by a constant.
 
+If we use this as an approximation for our function $$f(\omega)$$, we get something like this.
+
+<div id="sh-diagram-pantheon-fit-l2" class="diagram"></div>
+
 ## Bridging the Gap
 
 We've pretty much derived SH approximations from scratch now, so I want to end by highlighting how this approach differs from the typical one, and start to introduce the real mathematical definitions.
