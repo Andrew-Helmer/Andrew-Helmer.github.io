@@ -282,7 +282,7 @@ Finally, in my opinion the most important mistake is using SH projection (the fa
 
 <div id="sh-diagram-hemisphere-bias" class="diagram"></div>
 
-Sometimes this is handled by (often, implicitly) treating the lower hemisphere as black. But this is not correct either. It creates fake directionality. The radiance in the normal direction gets too bright, while getting too dark near the horizons. If you're calculating Lambertian diffuse, this can end up too dark or too bright in different scenarios.
+Sometimes this is handled by dividing the coefficients by two. But this is not correct either. This is the same as treating the lower hemisphere as black: it creates fake directionality. The radiance in the normal direction gets too bright, while getting too dark near the horizons. If you're calculating Lambertian diffuse, this can end up too dark or too bright in different scenarios.
 
 In addition to hemispherical domains, sometimes you might want to do things like optimize lighting for the points on the surface of a model.
 
