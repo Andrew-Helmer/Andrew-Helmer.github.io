@@ -16,7 +16,12 @@ For two-dimensional sequences in a renderer, the state-of-the-art (and default c
 
 I won't go into the full details of shuffling and scrambling, or the generation of these sequences. I will say I tried to cover the prerequisite knowledge well in the beginning sections of ["Stochastic Generation of (t,s) Sample Sequences"](https://www.seanet.com/~myandper/egsr21.pdf), and I also strongly recommend ["Practical Hash-based Owen Scrambling"](https://jcgt.org/published/0009/04/01/paper.pdf) because that is a more suitable implementation for a lot of renderers. But I will briefly mention the stratification properties:
 
-For a base-2 (0,2)-sequence, this means that up to the $$2^k$$ points, they are stratified on every power-of-two 2D grid. For example, for the first 8 points, they are stratified on the 8x1 grid, the 2x4 grid, the 4x2 grid, and the 1x8 grid. This interactive diagram shows the stratification. This combination of stratification, but randomness within each grid cell, yields pretty much the lowest error you can get for rendering (at least at powers-of-two).
+For a base-2 (0,2)-sequence, this means that up to the $$2^k$$ points, they are stratified on every power-of-two 2D grid. For example, for the first 8 points, they are stratified on the 8x1 grid, the 2x4 grid, the 4x2 grid, and the 1x8 grid. This interactive diagram shows the stratification. 
+
+<div id="sz-diagram-02-stratification" class="diagram"></div>
+<script defer src="{{ site.baseurl }}/post_assets/2026-11-12-sz-matrix-construction/sz-diagrams.js"></script>
+
+This combination of stratification, but randomness within each grid cell, yields pretty much the lowest error you can get for rendering (at least at powers-of-two).
 
 ## Higher Dimensionality
 
@@ -40,23 +45,26 @@ Dimensions 0 and 1 form a base-2 (0,2)-sequence.
 Dimensions 2 and 3 form a base-2 (0,2)-sequence.
 Dimensions 0,1,2,3 form a base-4 (0,4)-sequence.
 
-Not only are the first and second pairs of dimensions the ideal stratification, but all 4 dimensions together also have the ideal stratification (which includes all lower dimensional projections). Consider the first 16 points, which have the following stratifications:
+Not only are the first and second pairs of dimensions the ideal stratification, but all 4 dimensions together also have the ideal stratification (which includes all lower dimensional projections). Not only that, but they have a high-dimensional stratification property where $$16^k$$ points are always stratified on $$2^k \times 2^k \times 2^k \times 2^k$$.
 
-16x1x1x1, 8x2x1x1, 4x4x1x1, 2x8x1x1, 1x16x1x1
-1x1x16x1, 1x1x2x8, 1x1x4x4, 1x1x8x2, 1x1x1x16
-4x1x4x1, 4x1x1x4, 1x4x4x1, 1x4x1x4
+Consider the first 16 points, which have the following stratifications:
 
-*Additionally*, with the construction I'll give, it is also 2x2x2x2 stratified. TODO: Need to fact check this.
+* First two dimensions: $$[16 \times 1 \times 1 \times 1]$$, $$[8 \times 2 \times 1 \times 1]$$, $$[4 \times 4 \times 1 \times 1]$$, $$[2 \times 8 \times 1 \times 1]$$, $$[1 \times 16 \times 1 \times 1]$$
+* Latter two dimensions: $$[1 \times 1 \times 16 \times 1]$$, $$[1 \times 1 \times 2 \times 8]$$, $$[1 \times 1 \times 4 \times 4]$$, $$[1 \times 1 \times 8 \times 2]$$, $$[1 \times 1 \times 1 \times 16]$$
+* Other 2D projections: $$[4 \times 1 \times 4 \times 1]$$, $$[4 \times 1 \times 1 \times 4]$$, $$[1 \times 4 \times 4 \times 1]$$, $$[1 \times 4 \times 1 \times 4]$$
+* High-dimensional: $$[2 \times 2 \times 2 \times 2]$$
 
 It's not really possible to do better than this in stratification. And because it's a base-2 sequence, the generation, scrambling, and shuffling can all be done with fast binary operations.
 
 I mentioned that the SZ Sequence is infinite-dimensional. Well it actually has this expansive nesting property. The way it works is this. *All* odd-even pairs (disjoint groups of two) of dimensions are a base-2 (0,2)-sequence, that is, any two dimensions $$kd, kd+1$$ for any integer $$k \geq 0$$. *All* disjoint groups of 4, i.e. any $$kd, kd+1, kd+2, kd+3$$ are a base-4 (0,4)-sequence. All disjoint groups of 16 are a base-16 (0,16)-sequence. For example, the first 256 points are 2D stratified on the 16x16 grid for every pair of dimensions. Not just for the first 16 dimensions, but the 16 after that, and 16 after that, and so on. All disjoint groups of 256 dimensions are a base-256 (0,256)-sequence. And so on, squaring the dimensionality each time, for an infinite number of dimensions.
 
-The higher-dimensional forms of the SZ sequence probably wouldn't be useful in a renderer.
+The higher-dimensional forms of the SZ sequence probably wouldn't be useful in a path-tracer. But they can still be very useful for offline purposes, such as precalculating some integrals. I suspect there may be other fields they are useful for (like in finance maybe, or physics).
 
-The main contribution of this article over Ahmed et al's paper is presenting a significantly simpler and faster algorithm to construct the "generator matrices" for the SZ Sequences. This algorithm means you could pick an arbitrary dimension, say the 2^50th dimension, and easily generate the point values for that dimensions.
+The main contribution of this article over Ahmed et al's paper is presenting a significantly simpler and faster algorithm to construct the "generator matrices" for the SZ Sequences. This algorithm means you could pick an arbitrary dimension, say the 2^50th dimension, and easily generate the points for that dimension.
 
 ## Using SZ Sequences in your renderer
+
+The reason that SZ Sequences are so phenomenal for a renderer is that we are often combining two inherently 2D sampling spaces anyway. For example, a 2D lens position and a 2D pixel position. Or a 2D light sample, and a 2D BRDF sample. So combining two optimal 2D sequences into an optimal 4D sequence is pretty awesome for rendering! In fact, I happened to see that OpenQMC - which is maintained primarily by Framestore - [replaced the Sobol sequence with the SZ Sequence](https://github.com/AcademySoftwareFoundation/openqmc/commit/b6a204e1c542310017541985b2a17ac6e89535bf).
 
 Now if you want to use randomized SZ Sequences in your renderer, there are two options:
 1. Use the Stochastic Generation technique to precalculate sample sequences. I've added SZ Sequences to the Github repo (TODO: add link), so you can just use that!
