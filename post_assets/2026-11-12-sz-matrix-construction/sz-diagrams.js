@@ -513,8 +513,8 @@
     const MAX_POINTS = 256;
     let points4D = generateStochasticSZ4D(MAX_POINTS);
 
-    let viewMode = "2D"; // "2D" | "3D" | "4D"
-    let currentK = 4; // log2(N) in 1..8, defaults to 4 (16 points)
+    let viewMode = "3D"; // "2D" | "3D" | "4D"
+    let currentK = 6; // log2(N) in 1..8, defaults to 6 (64 points)
 
     // 2D stratification internal offset (same behavior as Diagram 1)
     let internalOffset2D = 0.0;
@@ -1122,8 +1122,12 @@
         vec3 ro = pCam.x * uCamRight + pCam.y * uCamUp;
         vec3 rd = uCamForward;
 
-        // Safe reciprocal ray direction for slab intersection with [-0.5, 0.5]^3
-        vec3 safeRd = sign(rd) * max(abs(rd), vec3(1e-6));
+        // Safe reciprocal ray direction for slab intersection with [-0.5, 0.5]^3 (handles exact 0 components at +/-90 deg pitch)
+        vec3 safeRd = vec3(
+          rd.x >= 0.0 ? max(rd.x, 1e-6) : min(rd.x, -1e-6),
+          rd.y >= 0.0 ? max(rd.y, 1e-6) : min(rd.y, -1e-6),
+          rd.z >= 0.0 ? max(rd.z, 1e-6) : min(rd.z, -1e-6)
+        );
         vec3 invD = 1.0 / safeRd;
 
         vec3 t0s = (-0.5 - ro) * invD;
@@ -1543,7 +1547,8 @@
       lastY = e.clientY;
 
       yaw -= dx * 0.007;
-      pitch = Math.max(-1.45, Math.min(1.45, pitch + dy * 0.007));
+      const maxPitch = Math.PI * 0.5 - 1e-4;
+      pitch = Math.max(-maxPitch, Math.min(maxPitch, pitch + dy * 0.007));
 
       cubeCells.forEach((c) => c.gizmo.update(yaw, pitch));
       request3DRender();
@@ -1747,8 +1752,8 @@
     });
 
     samplesSlider.input.addEventListener("dblclick", () => {
-      currentK = 4;
-      samplesSlider.input.value = "4";
+      currentK = 6;
+      samplesSlider.input.value = "6";
       updateAll();
     });
 
