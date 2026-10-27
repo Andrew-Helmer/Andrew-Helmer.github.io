@@ -10,22 +10,22 @@ Most of this post is going to be extremely niche - there might be only a dozen p
 
 After that will be the fully detailed construction and proofs.
 
-## (0,2)-Sequences
+## Base-2 (0,2)-Sequences
 
-For two-dimensional sequences in a renderer, the state-of-the-art (and default choice for many renderers) are shuffled + scrambled base-2 (0,2)-sequences. This is either called the PMJ02 sequence or Shuffle-Scrambled Sobol' (0,2)-sequence. In fact, with shuffling and scrambling, these are *identical*, they are truly the same sequence. I mean that the probability density of getting any specific sequence is exactly the same.
-
-I won't go into the full details of shuffling and scrambling, or the generation of these sequences. I will say I tried to cover the prerequisite knowledge well in the beginning sections of ["Stochastic Generation of (t,s) Sample Sequences"](https://www.seanet.com/~myandper/egsr21.pdf), and I also strongly recommend ["Practical Hash-based Owen Scrambling"](https://jcgt.org/published/0009/04/01/paper.pdf) because that is a more suitable implementation for a lot of renderers. But I will briefly mention the stratification properties:
-
-For a base-2 (0,2)-sequence, this means that up to the $$2^k$$ points, they are stratified on every power-of-two 2D grid. For example, for the first 8 points, they are stratified on the 8x1 grid, the 2x4 grid, the 4x2 grid, and the 1x8 grid. This interactive diagram shows the stratification. 
+A base-2 (0,2)-sequence this means that up to the $$2^k$$ points, they are stratified on every power-of-two 2D grid. For example, for the first 8 points, they are stratified on the 8x1 grid, the 2x4 grid, the 4x2 grid, and the 1x8 grid. This interactive diagram shows the stratification of a randomized base-2 (0,2)-sequence. 
 
 <div id="sz-diagram-02-stratification" class="diagram"></div>
 <script defer src="{{ site.baseurl }}/post_assets/2026-11-12-sz-matrix-construction/sz-diagrams.js"></script>
 
-This combination of stratification, but randomness within each grid cell, yields pretty much the lowest error you can get for rendering (at least at powers-of-two).
+This combination of stratification, but randomness within each grid cell, yields *pretty much* the lowest error you can get for a 2D progressive sample sequence for rendering.
+
+So for two-dimensional sequences in a renderer, the state-of-the-art (and default choice for many renderers) are shuffled + scrambled base-2 (0,2)-sequences. This is either called the (shuffled) PMJ02 sequence or Shuffled-Scrambled Sobol' (0,2)-sequence. Shuffling refers to a particular way of randomizing the order of the sample points (i.e. their indices), and scrambling refers to randomizing the positions of the points, without breaking their progressive stratification properties. Some more information about this is in the Prerequisite Knowledge section (TODO: link to it).
+
+As a side note, with shuffling and scrambling, PMJ02 and Sobol' (0,2) are actually *identical*: the probability density of getting any specific sequence is exactly the same. They are truly the same sequence.
 
 ## Higher Dimensionality
 
-However, an open question has always been, what to do for higher dimensionalities? When you're generating a path-tracer, you need random numbers for each bounce, so your sampling really has 100s of dimensions. From what I know, production path-tracers use one of the two approaches:
+Given that (0,2)-sequences are the best for 2D, what about if you want higher dimensions? When you're generating a path-tracer, you need random numbers for each bounce, so your sampling really has 100s of dimensions. From what I know, production offline renderers typically use one of the two approaches:
 1. Use the higher dimensional scrambled/stochastic Sobol' sequence, up to a limited number of dimensions (4 or 5 is typical, I think).
 1. "Shuffle" two scrambled/stochastic (0,2)-sequences together to make a sequence with some weaker 4D stratification.
 
@@ -54,6 +54,10 @@ Consider the first 16 points, which have the following stratifications:
 * Other 2D projections: $$[4 \times 1 \times 4 \times 1]$$, $$[4 \times 1 \times 1 \times 4]$$, $$[1 \times 4 \times 4 \times 1]$$, $$[1 \times 4 \times 1 \times 4]$$
 * High-dimensional: $$[2 \times 2 \times 2 \times 2]$$
 
+With higher point counts, the higher dimensional stratifications get filled out. For example at 64 points, all 3D 4x4x4 projections have exactly one point. This is a bit harder to visualize, but maybe this helps.
+
+<div id="sz-diagram-4d-projections" class="diagram diagram-wide"></div>
+
 It's not really possible to do better than this in stratification. And because it's a base-2 sequence, the generation, scrambling, and shuffling can all be done with fast binary operations.
 
 I mentioned that the SZ Sequence is infinite-dimensional. Well it actually has this expansive nesting property. The way it works is this. *All* odd-even pairs (disjoint groups of two) of dimensions are a base-2 (0,2)-sequence, that is, any two dimensions $$kd, kd+1$$ for any integer $$k \geq 0$$. *All* disjoint groups of 4, i.e. any $$kd, kd+1, kd+2, kd+3$$ are a base-4 (0,4)-sequence. All disjoint groups of 16 are a base-16 (0,16)-sequence. For example, the first 256 points are 2D stratified on the 16x16 grid for every pair of dimensions. Not just for the first 16 dimensions, but the 16 after that, and 16 after that, and so on. All disjoint groups of 256 dimensions are a base-256 (0,256)-sequence. And so on, squaring the dimensionality each time, for an infinite number of dimensions.
@@ -72,11 +76,25 @@ Now if you want to use randomized SZ Sequences in your renderer, there are two o
 
 In addition these, I've added randomized SZ Sequences to Samplin Safari.
 
+## Prerequisite: Binary Digital Sequences
+
+I'm going to give a very quick run-through of how binary *digital* sequences are generated. This is a somewhat interactive version of what we wrote in the beginning sections of ["Stochastic Generation of (t,s) Sample Sequences"](https://www.seanet.com/~myandper/egsr21.pdf). I would recommend checking that paper out instead, we give more formal definitions for any *base*, but still tried very hard to make it easy to understand. These interactive diagrams may help understand how binary base-2 sequences work.
+
+### The Radical Inverse and van der Corput Sequence
+
+### Generator Matrices
+
+...
+
+So the question for SZ Sequences is, how do we build the generator matrices for these sequences?
+
+## Prerequisite: Scrambling and Shuffling
+
+I won't cover how scrambling, shuffling, and stochastic generation work here. These are very important to techniques to randomize these sequences for a renderer. If you want to learn more about them, check out the Stochastic Generation paper above, and I also strongly recommend ["Practical Hash-based Owen Scrambling"](https://jcgt.org/published/0009/04/01/paper.pdf) because that is a more suitable implementation for a lot of renderers.
+
 ## Backstory
 
 (if you think I'm making this up, [I actually have a Colab notebook from 2021 with the exact matrix search](https://colab.research.google.com/drive/1HvpVKyB73nc41IKj5AEm-4lMaTBL-kwX?usp=sharing))
-
-## Prerequisite Knowledge
 
 ## Matrix Construction Algorithm
 
@@ -109,4 +127,7 @@ Now, there are a bunch of different ways to make this more efficient. I won't go
 1. For all practical purposes, what we really care about are the *j* Pascal matrices. These can be precalculated to something like say, 32, which make it easy to generate any of the first 2^32 dimensions.
 1. There is a mathematical property that the $$\mathcal{P}(A)\mathcal{P}(B) = \mathcal{P}(A) + \mathcal{P}(B)$$ if $$A$$ and $$B$$ are the same size (TODO: is this only true for finite fields?). Many of $$E_i$$ matrices are the same size, for example $$E_2$$ and $$E_3$$ are the same size, and $$E_4$$ through $$E_7$$ are the same size. In this case, rather than multiply the matrices, you add every element modulo 2. Because the matrices are stored as 32-bit integers, this is just doing one xor per row (or is it column?), so it's very fast.
 
-With the Pascal matrices precalculated, it is super-duper fast to generate an arbitrary one of these matrices. So I've written a simple C++ method to do it. This can generate any matrix up to dimension $$2^32-1$$, and it averages about xx nanoseconds.
+With the Pascal matrices precalculated, it is super-duper fast to generate an arbitrary one of these matrices. I've written some C++ code that builds the Pascals matrices at compile-time, and generates an arbitrary SZ sequence matrix at runtime. This can generate any matrix up to dimension $$2^32-1$$, and it averages about xx nanoseconds.
+
+## Why this works (informal proof)
+
