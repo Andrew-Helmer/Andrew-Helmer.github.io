@@ -15,6 +15,7 @@ After that will be the fully detailed construction and proofs.
 A base-2 (0,2)-sequence this means that up to the $$2^k$$ points, they are stratified on every power-of-two 2D grid. For example, for the first 8 points, they are stratified on the 8x1 grid, the 2x4 grid, the 4x2 grid, and the 1x8 grid. This interactive diagram shows the stratification of a randomized base-2 (0,2)-sequence. 
 
 <div id="sz-diagram-02-stratification" class="diagram"></div>
+<link rel="stylesheet" href="{{ site.baseurl }}/post_assets/2026-11-12-sz-matrix-construction/sz-diagrams.css">
 <script defer src="{{ site.baseurl }}/post_assets/2026-11-12-sz-matrix-construction/sz-diagrams.js"></script>
 
 This combination of stratification, but randomness within each grid cell, yields *pretty much* the lowest error you can get for a 2D progressive sample sequence for rendering.
@@ -71,26 +72,16 @@ The main contribution of this article over Ahmed et al's paper is presenting a s
 The reason that SZ Sequences are so phenomenal for a renderer is that we are often combining two inherently 2D sampling spaces anyway. For example, a 2D lens position and a 2D pixel position. Or a 2D light sample, and a 2D BRDF sample. So combining two optimal 2D sequences into an optimal 4D sequence is pretty awesome for rendering! In fact, I happened to see that OpenQMC - which is maintained primarily by Framestore - [replaced the Sobol sequence with the SZ Sequence](https://github.com/AcademySoftwareFoundation/openqmc/commit/b6a204e1c542310017541985b2a17ac6e89535bf).
 
 Now if you want to use randomized SZ Sequences in your renderer, there are two options:
-1. Use the Stochastic Generation technique to precalculate sample sequences. I've added SZ Sequences to the Github repo (TODO: add link), so you can just use that!
-1. Use Burley's Hash-Based Scrambling + Shuffling. I've made a new Github Repo specifically for this purpose.
+1. Use the Stochastic Generation technique to precalculate sample sequences. I've added SZ Sequences to the Github repo (TODO: add link), so you can just use that! [TODO: actually do this]
+1. Use Burley's Hash-Based Scrambling + Shuffling. I've made a new Github Repo specifically for this purpose. [TODO: actually do this]
 
-In addition these, I've added randomized SZ Sequences to Samplin Safari.
+In addition these, I've added randomized SZ Sequences to Samplin Safari. [TODO: actually do this]
 
-## Prerequisite: Binary Digital Sequences
+## Prerequisite
 
-I'm going to give a very quick run-through of how binary *digital* sequences are generated. This is a somewhat interactive version of what we wrote in the beginning sections of ["Stochastic Generation of (t,s) Sample Sequences"](https://www.seanet.com/~myandper/egsr21.pdf). I would recommend checking that paper out instead, we give more formal definitions for any *base*, but still tried very hard to make it easy to understand. These interactive diagrams may help understand how binary base-2 sequences work.
+I'm not going to go over all the prerequisite knowledge here, but I would suggest reading the earlier sections of our paper ["Stochastic Generation of (t,s) Sample Sequences"](https://www.seanet.com/~myandper/egsr21.pdf), at least up to Section 4.2. We made an effort to be formal but also to make it easy to understand the background information on how digital sequences are constructed. The important takeaway is that for a digital sample sequence, we need to construct a *generator* matrix for each dimension.
 
-### The Radical Inverse and van der Corput Sequence
-
-### Generator Matrices
-
-...
-
-So the question for SZ Sequences is, how do we build the generator matrices for these sequences?
-
-## Prerequisite: Scrambling and Shuffling
-
-I won't cover how scrambling, shuffling, and stochastic generation work here. These are very important to techniques to randomize these sequences for a renderer. If you want to learn more about them, check out the Stochastic Generation paper above, and I also strongly recommend ["Practical Hash-based Owen Scrambling"](https://jcgt.org/published/0009/04/01/paper.pdf) because that is a more suitable implementation for a lot of renderers.
+I walso on't cover how scrambling, shuffling, and stochastic generation work here. These are very important techniques to randomize these sequences for a renderer. If you want to learn more about them, check out the Stochastic Generation paper above, and I also strongly recommend ["Practical Hash-based Owen Scrambling"](https://jcgt.org/published/0009/04/01/paper.pdf) because that is a more suitable implementation for a lot of renderers.
 
 ## Backstory
 

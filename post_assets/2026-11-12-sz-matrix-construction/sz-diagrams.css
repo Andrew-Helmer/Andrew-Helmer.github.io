@@ -1,0 +1,68 @@
+/* Post-specific styles for SZ Sequence 3D/4D projection diagrams */
+.diagram .multi-stage-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 560 / 390;
+}
+
+.diagram .cube-stage-wrap {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.diagram .cube-grid-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  pointer-events: none;
+}
+
+.diagram .cube-grid-overlay.single-col {
+  grid-template-columns: 50%;
+  justify-content: center;
+}
+
+.diagram .cube-cell-overlay {
+  position: relative;
+  overflow: hidden;
+}
+
+.diagram .cube-cell-header {
+  position: absolute;
+  top: 4px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-family: Georgia, serif;
+  font-size: 14px;
+  color: #d9d9d9;
+  letter-spacing: 0.2px;
+}
+
+.diagram .cube-cell-header .cube-cell-sub {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 11.5px;
+  color: #888890;
+  margin-left: 6px;
+}
+
+.diagram .cube-axes-gizmo {
+  position: absolute;
+  bottom: 2px;
+  left: 6px;
+  width: 52px;
+  height: 52px;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.diagram .cube-axes-gizmo .axis-label {
+  font-family: Georgia, serif;
+  font-style: italic;
+  font-size: 11px;
+}
+
