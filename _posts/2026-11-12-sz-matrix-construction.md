@@ -218,7 +218,7 @@ def generate_sz_matrices(num_dims, N=32):
 
 This takes only a single matrix multiplication to generate each new matrix, with log(dimensions) Pascal matrices calculated up front.
 
-## Why this works (informal proof)
+## Why This Works (Informal Proof)
 
 ### Definitions
 
@@ -326,7 +326,7 @@ Minor notation detail: the first four $$\widetilde{M}_i$$ matrices in this 16-di
 
 Generally speaking, every matrix of this SZ Sequence is a similar block-diagonal left-scrambling of the matrices from the Faure-Niederreiter constructions. I'm not going to formally prove this in this blog post, but that's the intuition for why this works.
 
-## Extension to other bases
+## Extension to Other Bases
 
 It turns out that this "hierarchical" construction is not limited to binary matrices. This is likely not very useful for computer graphics, but might be more interesting to QMC folks. I'll refer to these as *Hierarchical Faure-Niederreiter Sequences*. Specifically a *Hierarchical Faure-Niederreiter Sequence* in prime base $$p$$ is an infinite-dimensional sequence such that for any integers $$k \geq 0$$, $$q \geq 0$$, we have a base $$b = p^{p^q}$$, so that the coordinates for dimensions $$kb, \dots, (k+1)b-1$$ form a base-$$b$$ $$(0,b)$$-sequence. Sometimes these are called "aligned dimensions" or "disjoint groups" of dimensions.
 
