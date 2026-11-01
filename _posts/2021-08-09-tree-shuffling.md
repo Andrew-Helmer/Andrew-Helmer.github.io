@@ -32,7 +32,7 @@ void binary_tree_shuffle(T* arr, int length) {
 
 Typical caveat here: I haven't tested this code, it might not even compile, it's just to give an idea.
 
-### Owen-scrambling, Faure-Tezuka scrambling
+### Owen-Scrambling, Faure-Tezuka Scrambling
 
 This sort of recursive tree shuffling is known as "Owen-scrambling", or Owen's scrambling, because it was introduced by Art Owen in the paper "Randomly permuted (t,m,s)-nets and (t, s)-sequences" (1995). Actually I think it was introduced by Owen in 1994 in a technical report, but that's not what most papers cite. Anyway Owen also calls it "Nested uniform scrambling", which is probably a better name, but less commonly used.
 
@@ -52,7 +52,7 @@ Let's back up. Who even cares about this? Why is it useful? I'm not going to go 
 
 More importantly, it's a useful method to shuffle the order of some progressive sample sequences, specifically *(t,s)*-sequences. A *(t,s)*-sequence shuffled with this method is still a *(t,s)*-sequence, but will be decorrelated from other shufflings of it. The personal background here is that I worked [on a paper](https://diglib.eg.org/handle/10.2312/sr20211287), and we discussed this kind of shuffling in Section 5.2 of the paper, but we never discussed how to do it *efficiently*. To be honest, other than the hashing technique I'll mention first, I hadn't precisely figured it out. I knew it was possible, but it was sort of a loose end.
 
-### Slight restatement: getting a shuffled index array.
+### Slight Restatement: Getting a Shuffled Index Array
 
 We're going to slightly adjust this problem to make further discussions simpler, but it's basically the same. Rather than shuffling an array in-place, all we're going to look at is generating a shuffle array of *indices*, which could then be used to shuffle some other array. Using the original shuffle, we're now defining a function <code>get_base2_shuffled_indices()</code>.
 
