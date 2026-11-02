@@ -141,6 +141,13 @@
             line join=miter,
             -{Stealth[length=6.2pt, width=5.0pt, inset=1.2pt]}
         },
+        alphaarrow/.style={
+            treeline,
+            line width=1.20pt,
+            densely dashed,
+            line join=miter,
+            -{Stealth[length=6.0pt, width=4.8pt, inset=1.2pt]}
+        },
         embedarrow/.style={
             mutedline,
             line width=1.15pt,
@@ -197,15 +204,15 @@
     % ORTHOGONAL MULTIPLICATION ARROWS (drawn BEFORE matrices so tails sit cleanly underneath)
     % =========================================================================
 
-    % 1. E_0 -> alpha_1 (horizontal)
-    \draw[flowarrow] ({\xZero + 0.5*\Msize}, \yRzero) -- ({\xOne - 0.5*\Msize - \bpad}, \yRzero);
+    % 1. E_0 -> alpha_1 (horizontal alpha-embedding)
+    \draw[alphaarrow] ({\xZero + 0.5*\Msize + \bpad}, \yRzero) -- ({\xOne - 0.5*\Msize - \bpad}, \yRzero);
 
     % 2. E'_0 -> E_1 (horizontal) and alpha_1 -> E_1 (vertical down)
     \draw[flowarrow] ({\xZero + 0.5*\Msize}, \yRone) -- ({\xOne - 0.5*\Msize - \bpad}, \yRone);
     \draw[flowarrow] (\xOne, {\yRzero - 0.5*\Msize}) -- (\xOne, {\yRone + 0.5*\Msize + \bpad});
 
-    % 3. E_1 -> alpha_2 (horizontal)
-    \draw[flowarrow] ({\xOne + 0.5*\Msize}, \yRone) -- ({\xTwo - 0.5*\Msize - \bpad}, \yRone);
+    % 3. E_1 -> alpha_2 (horizontal alpha-embedding)
+    \draw[alphaarrow] ({\xOne + 0.5*\Msize + \bpad}, \yRone) -- ({\xTwo - 0.5*\Msize - \bpad}, \yRone);
 
     % 4. E''_0 -> E_2 (horizontal across column 1)
     \draw[flowarrow] ({\xZero + 0.5*\Msize}, \yRtwo) -- ({\xTwo - 0.5*\Msize - \bpad}, \yRtwo);
@@ -219,8 +226,8 @@
     % 7. E'_1 -> E_3 (horizontal across column 2)
     \draw[flowarrow] ({\xOne + 0.5*\Msize}, \yRthree) -- ({\xThree - 0.5*\Msize - \bpad}, \yRthree);
 
-    % 8. E_3 -> alpha_3 (horizontal)
-    \draw[flowarrow] ({\xThree + 0.5*\Msize}, \yRthree) -- ({\xFour - 0.5*\Msize - \bpad}, \yRthree);
+    % 8. E_3 -> alpha_3 (horizontal alpha-embedding)
+    \draw[alphaarrow] ({\xThree + 0.5*\Msize + \bpad}, \yRthree) -- ({\xFour - 0.5*\Msize - \bpad}, \yRthree);
 
     % =========================================================================
     % LOWER GRID OF MATRICES (drawn ON TOP of arrow tails)
