@@ -24,7 +24,7 @@ A base-2 $$(0,2)$$-sequence means for $$2^k$$ points, they are stratified on eve
 
 This combination of stratification, but randomness within each grid cell, yields *pretty much* the lowest error you can get for a 2D progressive sample sequence for rendering.
 
-So for two-dimensional sequences in a renderer, the state-of-the-art (and default choice for many renderers) are shuffled + scrambled base-2 $$(0,2)$$-sequences. This is either called the (shuffled) PMJ02 sequence or Shuffled-Scrambled Sobol' $$(0,2)$$-sequence. Shuffling refers to a particular way of randomizing the order of the sample points (i.e. their indices), and scrambling refers to randomizing the positions of the points, without breaking their progressive stratification properties. Some more information about this is in the [Prerequisite Knowledge](#prerequisite-knowledge) section.
+So for two-dimensional sequences in a renderer, the state-of-the-art (and default choice for many renderers) are shuffled + scrambled base-2 $$(0,2)$$-sequences. This is either called the (shuffled) PMJ02 sequence or Shuffled-Scrambled Sobol' $$(0,2)$$-sequence. Shuffling refers to a particular way of randomizing the order of the sample points (i.e. their indices), and scrambling refers to randomizing the positions of the points, without breaking their progressive stratification properties. Some more information about this is linked to from the [Prerequisite Knowledge](#prerequisite-knowledge) section.
 
 As a side note, with shuffling and scrambling, PMJ02 and Sobol' $$(0,2)$$ are actually *identical*: the probability density of getting any specific sequence is exactly the same. They are truly the same sequence.
 
