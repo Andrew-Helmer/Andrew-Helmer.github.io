@@ -1,5 +1,7 @@
 ---
 layout: post
+image: /post_assets/2026-11-12-sz-matrix-construction/sz-matrix-header.svg
+meta_image: /post_assets/2026-11-12-sz-matrix-construction/sz-matrix-header-meta.jpg
 title: "A Direct Construction of SZ Sequence Matrices"
 subtitle: "How to generate the best sample sequences for 4D, 16D, 256D..."
 date: 2026-11-12
@@ -61,7 +63,7 @@ With higher point counts, the higher dimensional stratifications get filled out.
 
 <div id="sz-diagram-4d-projections" class="diagram diagram-wide"></div>
 
-It's not really possible to do better than this in stratification. And because it's a base-2 sequence, the generation, scrambling, and shuffling can all be done with fast binary operations.
+It's not really possible to do better than this in stratification - it's much better than the 4D Sobol. And because it's a base-2 sequence, the generation, scrambling, and shuffling can all be done with fast binary operations.
 
 I mentioned that the SZ Sequence is infinite-dimensional. Well it actually has this expansive nesting property. The way it works is this. *All* even-odd pairs (disjoint groups of two) of dimensions are a base-2 $$(0,2)$$-sequence, that is, any two dimensions $$2k, 2k+1$$ for any integer $$k \geq 0$$. *All* disjoint groups of 4, i.e. any $$4k, 4k+1, 4k+2, 4k+3$$ are a base-4 $$(0,4)$$-sequence. All disjoint groups of 16 are a base-16 $$(0,16)$$-sequence. For example, the first 256 points are 2D stratified on the 16x16 grid for every pair of dimensions. Not just for the first 16 dimensions, but the 16 after that, and 16 after that, and so on. All disjoint groups of 256 dimensions are a base-256 $$(0,256)$$-sequence. And so on, squaring the dimensionality each time, for an infinite number of dimensions.
 
@@ -347,7 +349,7 @@ To generate the $$j + 1$$ basis block matrices $$E_0, E_1, \dots, E_j$$:
 1. Initialize $$E_0 = \begin{bmatrix} 1 \end{bmatrix}$$ and $$n = 1$$.
 1. While $$n \le j$$:
     1. Set $$\beta = E_{n-1}$$ (which is an $$n \times n$$ matrix).
-    1. Let $$\alpha$$ be a $$pn \times pn$$ matrix (a $$p \times p$$ grid of $$n \times n$$ blocks), with $$I_n$$ on the superdiagonal, $$\beta$$ in the bottom-left, and $$I_n$$ just to the right of $$\beta$$ (every other block is zeroes):
+    1. Let $$\alpha$$ be a $$pn \times pn$$ matrix (a $$p \times p$$ grid of $$n \times n$$ blocks), with $$\beta$$ in the bottom-left, $$I_n$$ just to the right of $$\beta$$, and the upper-right portion of the matrix is the identity matrix (I think this is called the super-diagonal):
        $$\alpha = \begin{bmatrix}
        0_n & I_n & 0_n & \cdots & 0_n \\
        0_n & 0_n & I_n & \cdots & 0_n \\
