@@ -89,6 +89,8 @@ I also won't cover how scrambling, shuffling, and stochastic generation work her
 
 ## Backstory and AI Usage
 
+Feel free to skip this section by the way. Nothing in it is referenced elsewhere.
+
 Back when I was researching sampling in 2020 (prior to writing the Stochastic Generation paper), I had the idea to search for generator matrices that could be useful for graphics. Most of these searches did not pan out, but I discovered what we now call SZ Sequences: two base-2 $$(0,2)$$-sequences could be combined to form a base-4 $$(0,4)$$-sequence. And four of these could be combined to form a base-16 $$(0,16)$$-sequence, and so on. After publishing the Stochastic Generation paper, I was hoping to be able to find a direct construction of these matrices, but never did. It sat in the back of my mind as an open problem, but once I got my last job at Respawn, I didn't really have enough time to dig further.
 
 To my delight, Ahmed et al. published the SZ Sequences paper in 2025 on arXiv. They connected these sequences to the prime-power $$(0,s)$$ Niederreiter constructions. I learned so much from their paper, I had no idea that prime-power finite fields could be represented as matrices of the base prime. But when I read their paper and thought about it more, I had a feeling that the construction was a bit more complex than it needed to be. It still required some searching (for an $$\alpha$$ matrix), and also required sorting and reordering matrices. So I spent some time digging more, kind-of felt like there was a valid direction using polynomials and companion matrices to construct the alphabet, but I couldn't get it.
@@ -103,9 +105,11 @@ In any case, finding these sequences by brute-force was the easy part. I wouldn'
 
 ## New Matrix Construction Algorithm
 
-With an understanding of the *digital method* for generating QMC sequences, let's walk through how to construct a generator matrix for the SZ sequence. This is a new algorithm, not what's in the original SZ Sequence paper. Unlike that algorithm, this one requires zero search, and it's considerably faster for higher dimensionalities.
+If you understand the *digital method* for generating QMC sequences, then you know that digital sequences are defined by their generator matrices for each dimension. 
 
-First, we'll look at how to construct a single matrix for any arbitrary dimension $$d$$. Then we'll look at generating all $$s$$ dimensions at once, which is even more efficient since most of the work is shared across dimensions.
+So now, I'll present the new algorithm for generating the matrices for the SZ Sequence. Unlike the algorithm from the paper, this requires zero search, and no sorting or rearrangement or dimensions. Also any arbitrary dimension's matrix can be constructed very quickly, it's not necessary to construct other dimensions (though it makes it a bit faster).
+
+So we'll look at how to construct a single matrix for an arbitrary dimension $$d$$. Then we'll look at generating all $$s$$ dimensions at once, which is even more efficient since most of the work is shared across dimensions.
 
 To construct the $$N \times N$$ binary generator matrix $$M$$ for dimension $$d$$:
 1. Initialize $$M = I_N$$ (the $$N \times N$$ identity matrix).
