@@ -128,7 +128,7 @@ To generate the $$j + 1$$ basis block matrices $$E_0, E_1, \dots, E_j$$:
     1. For $$i = 0 \dots n - 1$$ (while $$n + i \le j$$):
         1. Let $$E'_i$$ be $$E_i$$ repeated along the main diagonal to size $$n \times n$$:
            $$E'_i = \begin{bmatrix} E_i & & 0 \\ & \ddots & \\ 0 & & E_i \end{bmatrix}_{n \times n}$$
-        1. Construct the $$2n \times 2n$$ basis matrix $$E_{n+i}$$ as the $$2 \times 2$$ block matrix:
+        1. Construct the $$2n \times 2n$$ basis matrix $$E_{n+i}$$ as a $$2 \times 2$$ block matrix with $$n \times $$ blocks:
            $$E_{n+i} = \begin{bmatrix} 0_n & E'_i \\ \beta E'_i & E'_i \end{bmatrix}$$
     1. Set $$n \leftarrow 2n$$.
 
