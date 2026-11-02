@@ -1,10 +1,10 @@
 ---
 layout: post
-image: /post_assets/2026-11-12-sz-matrix-construction/sz-matrix-header.svg
-meta_image: /post_assets/2026-11-12-sz-matrix-construction/sz-matrix-header-meta.jpg
+image: /post_assets/2026-11-03-sz-matrix-construction/sz-matrix-header.svg
+meta_image: /post_assets/2026-11-03-sz-matrix-construction/sz-matrix-header-meta.jpg
 title: "A Direct Construction of SZ Sequence Matrices"
 subtitle: "How to generate the best sample sequences for 4D, 16D, 256D..."
-date: 2026-11-12
+date: 2026-11-03
 latex: true
 ---
 
@@ -19,8 +19,8 @@ After that, I suspect the rest of the post will only be interesting to maybe a d
 A base-2 $$(0,2)$$-sequence means for $$2^k$$ points, they are stratified on every power-of-two 2D grid. For example, for the first 8 points, they are stratified on the 8x1 grid, the 2x4 grid, the 4x2 grid, and the 1x8 grid. This interactive diagram shows the stratification of a randomized base-2 $$(0,2)$$-sequence. 
 
 <div id="sz-diagram-02-stratification" class="diagram"></div>
-<link rel="stylesheet" href="{{ site.baseurl }}/post_assets/2026-11-12-sz-matrix-construction/sz-diagrams.css">
-<script defer src="{{ site.baseurl }}/post_assets/2026-11-12-sz-matrix-construction/sz-diagrams.js"></script>
+<link rel="stylesheet" href="{{ site.baseurl }}/post_assets/2026-11-03-sz-matrix-construction/sz-diagrams.css">
+<script defer src="{{ site.baseurl }}/post_assets/2026-11-03-sz-matrix-construction/sz-diagrams.js"></script>
 
 This combination of stratification, but randomness within each grid cell, yields *pretty much* the lowest error you can get for a 2D progressive sample sequence for rendering.
 
