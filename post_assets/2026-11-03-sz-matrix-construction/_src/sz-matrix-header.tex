@@ -26,6 +26,18 @@
     \draw[#1] (#2, #3) -- (#4, #3) -- (#4, #5) -- (#2, #5) -- cycle;
 }
 
+% Typeset \Big)^{#1} with the exact vertical height and depth of \Big( so left and right parentheses align identically
+% (Uses raw TeX \setbox/\hbox instead of LaTeX \sbox so dvisvgm does not inject a black color group reset)
+\newcommand{\rparenpow}[1]{%
+    \begingroup
+    \setbox0=\hbox{$\Big($}%
+    \setbox2=\hbox{$\Big)^{\!#1}$}%
+    \ht2=\ht0
+    \dp2=\dp0
+    \box2%
+    \endgroup
+}
+
 % Helper macro to draw a matrix of total size \Msize centered at (#1, #2)
 % #1 = cx, #2 = cy, #3 = N (1, 2, 4, 8), #4 = comma-separated r/c of 1-cells, #5 = fill color, #6 = border color, #7 = border lw
 \newcommand{\drawmat}[7]{
@@ -167,22 +179,22 @@
     % P( E_0 )^1 centered with E_0 at \xZero
     \node[color=digitcolor, scale=1.95, anchor=east, inner sep=0pt] at ({\xZero - 0.5*\Msize - 0.04}, \yTop) {$\mathcal{P}\!\Big($};
     \drawmat{\xZero}{\yTop}{1}{0/0}{colE0}{colE0}{1.35pt}
-    \node[color=digitcolor, scale=1.95, anchor=west, inner sep=0pt] at ({\xZero + 0.5*\Msize + 0.04}, \yTop) {$\Big)^{\!1}$};
+    \node[color=digitcolor, scale=1.95, anchor=west, inner sep=0pt] at ({\xZero + 0.5*\Msize + 0.04}, \yTop) {\rparenpow{1}};
 
     % P( E_1 )^0 centered with E_1 at \xOne
     \node[color=digitcolor, scale=1.95, anchor=east, inner sep=0pt] at ({\xOne - 0.5*\Msize - 0.04}, \yTop) {$\mathcal{P}\!\Big($};
     \drawmat{\xOne}{\yTop}{2}{0/1, 1/0, 1/1}{colE1}{colE1}{1.35pt}
-    \node[color=digitcolor, scale=1.95, anchor=west, inner sep=0pt] at ({\xOne + 0.5*\Msize + 0.04}, \yTop) {$\Big)^{\!0}$};
+    \node[color=digitcolor, scale=1.95, anchor=west, inner sep=0pt] at ({\xOne + 0.5*\Msize + 0.04}, \yTop) {\rparenpow{0}};
 
     % P( E_2 )^0 centered with E_2 at \xTwo
     \node[color=digitcolor, scale=1.95, anchor=east, inner sep=0pt] at ({\xTwo - 0.5*\Msize - 0.04}, \yTop) {$\mathcal{P}\!\Big($};
     \drawmat{\xTwo}{\yTop}{4}{0/2, 1/3, 2/1, 2/2, 3/0, 3/1, 3/3}{colE2}{colE2}{1.35pt}
-    \node[color=digitcolor, scale=1.95, anchor=west, inner sep=0pt] at ({\xTwo + 0.5*\Msize + 0.04}, \yTop) {$\Big)^{\!0}$};
+    \node[color=digitcolor, scale=1.95, anchor=west, inner sep=0pt] at ({\xTwo + 0.5*\Msize + 0.04}, \yTop) {\rparenpow{0}};
 
     % P( E_3 )^1 centered with E_3 at \xThree
     \node[color=digitcolor, scale=1.95, anchor=east, inner sep=0pt] at ({\xThree - 0.5*\Msize - 0.04}, \yTop) {$\mathcal{P}\!\Big($};
     \drawmat{\xThree}{\yTop}{4}{0/3, 1/2, 1/3, 2/0, 2/1, 2/3, 3/0, 3/2, 3/3}{colE3}{colE3}{1.35pt}
-    \node[color=digitcolor, scale=1.95, anchor=west, inner sep=0pt] at ({\xThree + 0.5*\Msize + 0.04}, \yTop) {$\Big)^{\!1}$};
+    \node[color=digitcolor, scale=1.95, anchor=west, inner sep=0pt] at ({\xThree + 0.5*\Msize + 0.04}, \yTop) {\rparenpow{1}};
 
     % Trailing ellipsis "..."
     \node[color=digitcolor, scale=1.95, anchor=west, inner sep=0pt] at ({\xThree + 0.5*\Msize + 0.62}, \yTop) {$\cdots$};
