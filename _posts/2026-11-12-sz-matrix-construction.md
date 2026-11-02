@@ -8,7 +8,9 @@ latex: true
 
 This post is going to start off describing what SZ Sequences are, and why I think the 4D shuffled-scrambled SZ Sequence should be the *default* sample sequence many people turn to when implementing something like a path-tracer. Then I'll point to the open-source code that has them in [Using SZ Sequences in Your Renderer](#using-sz-sequences-in-your-renderer).
 
-After that, I suspect the rest of the post will only be interesting to maybe a dozen people. But it's also where the real contribution of this post is - a simpler algorithm for building the matrices that define the SZ sequence.
+After that, I suspect the rest of the post will only be interesting to maybe a dozen people. But it's also where the real contribution of this post is - a simpler algorithm for building the matrices that define the SZ Sequence. And at the very end, I'll expand this algorithm to other prime numbers for what I call the "Hierarchical Faure-Niederreiter" or HFN Sequences, where the SZ Sequence is the base-2 HFN sequence.
+
+<!--more-->
 
 ## Base-2 (0,2)-Sequences
 
@@ -72,12 +74,10 @@ The main contribution of this article over Ahmed et al.'s paper is presenting a 
 The reason that SZ Sequences are so phenomenal for a renderer is that we are often combining two inherently 2D sampling spaces anyway. For example, a 2D lens position and a 2D pixel position. Or a 2D light sample, and a 2D BRDF sample. So combining two optimal 2D sequences into an optimal 4D sequence is pretty awesome for rendering! In fact, I happened to see that OpenQMC - which is maintained primarily by Framestore - [replaced the Sobol' sequence with the SZ Sequence](https://github.com/AcademySoftwareFoundation/openqmc/commit/b6a204e1c542310017541985b2a17ac6e89535bf).
 
 Now if you want to use randomized SZ Sequences in your renderer, there are fundamentally two approaches:
-1. Use the Stochastic Generation technique to precalculate sample sequences. I've added SZ Sequences to the GitHub repo (TODO: add link), so you can just use that! [TODO: actually do this]
-1. Use Burley's Hash-Based Scrambling + Shuffling. I've made a new GitHub repo specifically for this purpose. [TODO: actually do this]
+1. Use the Stochastic Generation technique to precalculate sample sequences. I've added SZ Sequences [to the Stochastic Generation GitHub repo](https://github.com/Andrew-Helmer/stochastic-generation), so you can just use that!
+1. Use Burley's Hash-Based Scrambling + Shuffling. I've made [a new SZ Sequences GitHub repo](https://github.com/Andrew-Helmer/sz-sequences) specifically for this purpose.
 
 OpenQMC also takes the latter approach, and if you want to experiment with more sampling possibilities (and get some other benefits like screen-space blue-noise), then it's a great way to go.
-
-In addition to these, I've added randomized SZ Sequences to Sampling Safari. [TODO: actually do this]
 
 ## Prerequisite Knowledge
 
@@ -87,15 +87,17 @@ I also won't cover how scrambling, shuffling, and stochastic generation work her
 
 ## Backstory and AI Usage
 
-Back when I was researching sampling in 2020 (prior to writing the Stochastic Generation paper), I had the idea to search for generator matrices that could be useful for graphics. Most of these searches did not pan out, but I discovered what we now call SZ Sequences: two base-2 $$(0,2)$$-sequences could be combined to form a base-4 $$(0,4)$$-sequence. And four of these could be combined to form a base-16 $$(0,16)$$-sequence. And so on. I mentioned it briefly to Per Christensen and Andrew Kensler. After publishing the Stochastic Generation paper, I was hoping to be able to find a direct construction of these matrices, but never did. It sat in the back of my mind as an open problem, but once I got my last job at Respawn, I didn't really have enough time to dig further.
+Back when I was researching sampling in 2020 (prior to writing the Stochastic Generation paper), I had the idea to search for generator matrices that could be useful for graphics. Most of these searches did not pan out, but I discovered what we now call SZ Sequences: two base-2 $$(0,2)$$-sequences could be combined to form a base-4 $$(0,4)$$-sequence. And four of these could be combined to form a base-16 $$(0,16)$$-sequence, and so on. After publishing the Stochastic Generation paper, I was hoping to be able to find a direct construction of these matrices, but never did. It sat in the back of my mind as an open problem, but once I got my last job at Respawn, I didn't really have enough time to dig further.
 
-To my delight, Ahmed et al. published the SZ Sequences paper in 2025 on arXiv. They connected this to the prime-power $$(0,s)$$ Niederreiter constructions. I learned so much from their paper, I had no idea that prime-power finite fields could be represented as matrices of the base prime. But when I read their paper, I had a feeling that the construction was a bit more complex than it needed to be. It still required some searching (for an $$\alpha$$ matrix), and also required sorting and reordering matrices. So I spent some time digging more, kind-of felt like there was a valid direction using polynomials and companion matrices to construct the alphabet, but didn't quite get it.
+To my delight, Ahmed et al. published the SZ Sequences paper in 2025 on arXiv. They connected these sequences to the prime-power $$(0,s)$$ Niederreiter constructions. I learned so much from their paper, I had no idea that prime-power finite fields could be represented as matrices of the base prime. But when I read their paper and thought about it more, I had a feeling that the construction was a bit more complex than it needed to be. It still required some searching (for an $$\alpha$$ matrix), and also required sorting and reordering matrices. So I spent some time digging more, kind-of felt like there was a valid direction using polynomials and companion matrices to construct the alphabet, but I couldn't get it.
 
 Recently when Gemini 4 Argon came out, I thought I'd ask it to see if it could come up with a better construction. I told it the things I had already tried and the directions I was thinking... and it ran for about 10 minutes before it gave roughly the algorithm I'm describing in this article. It made some pretty amazing leaps and connected to some more obscure math theory (most of which I'm omitting here). After that I spent a lot of time understanding the exact algorithm, understanding the proof of why it works, and restructuring the algorithm to be easier to understand (and also slightly more efficient).
 
-Like my other posts, the **writing** in this post is my own. I personally feel it's important for me to understand (or think I understand) anything I put out there, and writing it myself is a way to do that. But like my last post, the diagrams are AI, the written code is mostly AI, and I had it help with formatting and notation details of the math.
+Like my other posts, the **writing** in this post is my own. I personally feel it's important for me to understand (or think I understand) anything I put out there, and writing it myself is a way to enforce that. But like my last post, the diagrams are AI generated (with specific instructions from me), the written code is mostly AI, and I had it help with formatting and notation details of the math.
 
-P.S. I actually have a bit of proof that I found the same sequences in 2020, [this colab notebook](https://colab.research.google.com/drive/1DXXPa-TX_xrbZVOk9_8B1Zya3tW83k2v?usp=sharing), for which you can see the revision history from 2020. It was never meant to be read by anyone else, but it does show the search. In any case, finding these sequences by brute-force was the easy part. I wouldn't be surprised if Ahmed found them even earlier, and if others in the QMC community had found them long before that. The work Ahmed did to connect them to the Faure-Niederreiter construction was the hardest part by far!
+P.S. I actually have a bit of proof that I found the same sequences in 2020, [this colab notebook](https://colab.research.google.com/drive/1DXXPa-TX_xrbZVOk9_8B1Zya3tW83k2v?usp=sharing), for which you can see the revision history from 2020. It was never meant to be read by anyone else, so it's super messy, but it does show the search. 
+
+In any case, finding these sequences by brute-force was the easy part. I wouldn't be surprised if Ahmed found them even earlier, and if others in the QMC community had found them before that. The work Ahmed et al. did to connect them to the Niederreiter construction was the hardest part by far! Something that I probably never would've discovered on my own. My main point in this Backstory section is to give a little insight into how these things develop over longer periods of time.
 
 ## New Matrix Construction Algorithm
 
@@ -291,7 +293,7 @@ U & 0_2 & 0_2 & 0_2 & \cdots \\
 \vdots & \vdots & \vdots & \vdots & \ddots
 \end{bmatrix}$$
 
-Now the important observation here is that this $$\mathcal{U}$$ matrix will effectively scramble within a base-4 group of stratifications. This scrambling is a subset of Owen's scrambling, and doesn't break or change any $$(t,s)$$-sequence properties. So our new construction is also a $$(0,4)$$-sequence.
+Now the important observation here is that this $$\mathcal{U}$$ matrix will effectively scramble within a base-4 group of stratifications. This scrambling is a subset of Owen's scrambling in base-4, and doesn't break or change any $$(t,s)$$-sequence properties in base-4, but it "fixes" the stratifications in base-2 to form the two base-2 $$(0,2)$$-sequences. So our new construction is also a $$(0,4)$$-sequence.
 
 Now we also know that $$M_0 = I$$ and $$M_1 = \mathcal{P}(E_0)$$ form a base-2 $$(0,2)$$-sequence, this is the classic Sobol' and Faure construction. $$M_2 = M_0\mathcal{P}(E_1)$$ and $$M_3 = M_1\mathcal{P}(E_1)$$, and $$\mathcal{P}(E_1)$$ is a non-singular upper-triangular (NUT) matrix. Faure and Tezuka showed in ["Another random scrambling of digital (t,s)-sequences"](https://doi.org/10.1007/978-3-642-56046-0_16) (2002) that taking a $$(t,s)$$-sequence and right-multiplying every matrix by a NUT matrix preserves the $$(t,s)$$ property, it's really just a base-2 reshuffling of the indices. So $$M_2$$ and $$M_3$$ also form a base-2 $$(0,2)$$-sequence.
 
@@ -326,10 +328,149 @@ Minor notation detail: the first four $$\widetilde{M}_i$$ matrices in this 16-di
 
 Generally speaking, every matrix of this SZ Sequence is a similar block-diagonal left-scrambling of the matrices from the Faure-Niederreiter constructions. I'm not going to formally prove this in this blog post, but that's the intuition for why this works.
 
-## Extension to Other Bases
+## Hierarchical Faure-Niederreiter Sequences
 
-It turns out that this "hierarchical" construction is not limited to binary matrices. This is likely not very useful for computer graphics, but might be more interesting to QMC folks. I'll refer to these as *Hierarchical Faure-Niederreiter Sequences*. Specifically a *Hierarchical Faure-Niederreiter Sequence* in prime base $$p$$ is an infinite-dimensional sequence such that for any integers $$k \geq 0$$, $$q \geq 0$$, we have a base $$b = p^{p^q}$$, so that the coordinates for dimensions $$kb, \dots, (k+1)b-1$$ form a base-$$b$$ $$(0,b)$$-sequence. Sometimes these are called "aligned dimensions" or "disjoint groups" of dimensions.
+It turns out that this "hierarchical" construction is not limited to binary matrices, we can extend it to other prime bases. This is likely not very useful for computer graphics, but might be more interesting to QMC folks. I'll refer to these as *Hierarchical Faure-Niederreiter Sequences* or HFN sequences, where SZ are the base-2 HFN sequences. 
 
-The generalized construction goes like this:
-[TODO: fill out generalized construction]
+Specifically a *Hierarchical Faure-Niederreiter Sequence* in prime base $$p$$ is an infinite-dimensional sequence such that for any integers $$k \geq 0$$, $$q \geq 0$$, we have a base $$b = p^{p^q}$$, so that the coordinates for dimensions $$kb, \dots, (k+1)b-1$$ form a base-$$b$$ $$(0,b)$$-sequence. Sometimes these are called "aligned dimensions" or "disjoint groups" of dimensions.
 
+The generalized construction goes like this, for dimension $$d$$, with a prime base $$p$$:
+
+1. Initialize $$M = I_N$$ (the $$N \times N$$ identity matrix).
+1. If $$d = 0$$, return $$M$$.
+1. Calculate the base-$$p$$ representation of $$d$$, i.e. the digits $$c_0, c_1, \dots, c_j \in \{0, 1, \dots, p - 1\}$$ such that $$d = \sum_{i=0}^{j} c_i p^i$$, where $$j = \lfloor \log_p(d) \rfloor$$ is the index of the highest non-zero digit.
+1. Generate the basis block matrices $$E_0, E_1, \dots, E_j$$ (described below).
+1. For $$i = 0 \dots j$$: $$M \leftarrow M \cdot \mathcal{P}(E_i)^{c_i} \pmod p$$
+1. Return $$M$$.
+
+To generate the $$j + 1$$ basis block matrices $$E_0, E_1, \dots, E_j$$:
+1. Initialize $$E_0 = \begin{bmatrix} 1 \end{bmatrix}$$ and $$n = 1$$.
+1. While $$n \le j$$:
+    1. Set $$\beta = E_{n-1}$$ (which is an $$n \times n$$ matrix).
+    1. Let $$\alpha$$ be a $$pn \times pn$$ matrix (a $$p \times p$$ grid of $$n \times n$$ blocks), with $$I_n$$ on the superdiagonal, $$\beta$$ in the bottom-left, and $$I_n$$ just to the right of $$\beta$$ (every other block is zeroes):
+       $$\alpha = \begin{bmatrix}
+       0_n & I_n & 0_n & \cdots & 0_n \\
+       0_n & 0_n & I_n & \cdots & 0_n \\
+       \vdots & \vdots & \vdots & \ddots & \vdots \\
+       0_n & 0_n & 0_n & \cdots & I_n \\
+       \beta & I_n & 0_n & \cdots & 0_n
+       \end{bmatrix}_{pn \times pn}$$
+    1. For $$m = 1 \dots p - 1$$:
+        1. For $$i = 0 \dots n - 1$$ (while $$mn + i \le j$$):
+            1. Let $$E'_i$$ be $$E_i$$ repeated along the main diagonal to size $$pn \times pn$$:
+               $$E'_i = \begin{bmatrix} E_i & & 0 \\ & \ddots & \\ 0 & & E_i \end{bmatrix}_{pn \times pn}$$
+            1. Construct the $$pn \times pn$$ basis matrix $$E_{mn+i}$$ as:
+               $$E_{mn+i} = \alpha^m E'_i \pmod p$$
+    1. Set $$n \leftarrow pn$$.
+
+And again, the block-Pascal matrix $$\mathcal{P}(X)$$ for prime base $$p$$ is defined with each block as:
+
+$$\mathcal{P}(X)_{i,j} = \binom{j}{i} X^{j-i} \pmod p$$
+
+And here is the full Python code, both for individual matrices, and for the first `num_dims` matrices.
+
+{% highlight python linenos %}
+from math import comb
+import numpy as np
+
+def repeat_diagonal(block, n):
+    m = len(block)
+    k = n // m
+    zero_m = np.zeros((m, m), dtype=int)
+    return np.block([
+        [block if i == j else zero_m for j in range(k)]
+        for i in range(k)
+    ])
+
+def matrix_power_mod(matrix, exp, p):
+    result = np.identity(len(matrix), dtype=int)
+    for _ in range(exp):
+        result = np.matmul(result, matrix) % p
+    return result
+
+def block_pascal(block, N, p):
+    m = len(block)
+    num_blocks = N // m
+    powers = [np.identity(m, dtype=int)]
+    for _ in range(num_blocks - 1):
+        powers.append(np.matmul(powers[-1], block) % p)
+
+    P = np.zeros((N, N), dtype=int)
+    for i in range(num_blocks):
+        for j in range(i, num_blocks):
+            coeff = comb(j, i) % p
+            if coeff != 0:
+                P[i*m : (i+1)*m, j*m : (j+1)*m] = (coeff * powers[j - i]) % p
+    return P
+
+def make_alpha_matrix(beta, p):
+    n = len(beta)
+    zero_n = np.zeros((n, n), dtype=int)
+    ident_n = np.identity(n, dtype=int)
+    blocks = [[zero_n for _ in range(p)] for _ in range(p)]
+    for r in range(p - 1):
+        blocks[r][r + 1] = ident_n
+    blocks[p - 1][0] = beta
+    blocks[p - 1][1] = ident_n
+    return np.block(blocks)
+
+def generate_basis_matrices(num_matrices, p):
+    basis_matrices = [np.array([[1]], dtype=int)]
+    n = 1
+    while n < num_matrices:
+        beta = basis_matrices[n - 1]
+        alpha = make_alpha_matrix(beta, p)
+        for m in range(1, p):
+            alpha_m = matrix_power_mod(alpha, m, p)
+            for i in range(n):
+                if m * n + i >= num_matrices:
+                    break
+                E_enlarged = repeat_diagonal(basis_matrices[i], p * n)
+                E_next = np.matmul(alpha_m, E_enlarged) % p
+                basis_matrices.append(E_next)
+        n *= p
+    return basis_matrices
+
+def generate_hfn_matrix(dim, p=2, N=32):
+    M = np.identity(N, dtype=int)
+    if dim == 0:
+        return M
+
+    digits = []
+    temp = dim
+    while temp > 0:
+        digits.append(temp % p)
+        temp //= p
+
+    num_basis = len(digits)
+    basis_matrices = generate_basis_matrices(num_basis, p)
+    for i, c_i in enumerate(digits):
+        if c_i != 0:
+            P_i = block_pascal(basis_matrices[i], N, p)
+            M = np.matmul(M, matrix_power_mod(P_i, c_i, p)) % p
+    return M
+
+def generate_hfn_matrices(num_dims, p=2, N=32):
+    matrices = [np.identity(N, dtype=int)]
+    if num_dims <= 1:
+        return matrices[:num_dims]
+
+    num_basis = 0
+    temp = num_dims - 1
+    while temp > 0:
+        num_basis += 1
+        temp //= p
+
+    basis_matrices = generate_basis_matrices(num_basis, p)
+    pascal_matrices = [block_pascal(E_i, N, p) for E_i in basis_matrices]
+
+    for P in pascal_matrices:
+        prev_matrices = list(matrices)
+        for c_i in range(1, p):
+            P_pow = matrix_power_mod(P, c_i, p)
+            matrices += [
+                np.matmul(M, P_pow) % p
+                for M in prev_matrices[:num_dims - len(matrices)]
+            ]
+    return matrices
+{% endhighlight %}
