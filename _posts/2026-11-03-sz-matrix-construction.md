@@ -373,7 +373,7 @@ And again, the block-Pascal matrix $$\mathcal{P}(X)$$ for prime base $$p$$ is de
 
 $$\mathcal{P}(X)_{i,j} = \binom{j}{i} X^{j-i} \pmod p$$
 
-In this generalized construction, you might notice that $$\alpha$$ is a "companion matrix" for a monic polynomial, specifically $$x^p - x - \beta = 0$$ over the previous (nested) field. I haven't gotten into it in this post, but that's the secret of how this construction was derived.
+In this generalized construction, you might notice that $$\alpha$$ is a [companion matrix](https://en.wikipedia.org/wiki/Companion_matrix) for a monic polynomial, specifically $$x^p - x - \beta = 0$$ over the previous (nested) field. I haven't gotten into it in this post, but that's the secret of how this construction was derived.
 
 Anyway here is the full Python code for HFN sequences, both for individual matrices of an arbitrary dimension, and for the first `num_dims` matrices.
 
