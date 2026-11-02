@@ -10,7 +10,7 @@ latex: true
 
 This post is going to start off describing what SZ Sequences are, and why I think the 4D shuffled-scrambled SZ Sequence should be the *default* sample sequence many people turn to when implementing something like a path-tracer. Then I'll point to the open-source code that has them in [Using SZ Sequences in Your Renderer](#using-sz-sequences-in-your-renderer).
 
-After that, I suspect the rest of the post will only be interesting to maybe a dozen people. But it's also where the real contribution of this post is - a simpler algorithm for building the matrices that define the SZ Sequence. And at the very end, I'll expand this algorithm to other prime numbers for what I call the "Hierarchical Faure-Niederreiter" or HFN Sequences, where the SZ Sequence is the base-2 HFN sequence.
+After that, I suspect the rest of the post will only be interesting to maybe a dozen people. But it's also where the real contribution is: the [New Matrix Construction Algorithm](#new-matrix-construction-algorithm) section defines a procedure that's much simpler and faster than Ahmed et al's paper. And at the very end, in [Hierarchical Faure-Niederreiter Sequences](#hierarchical-faure-niederreiter-sequences), I'll expand the construction to other prime bases. The SZ Sequence is just the base-2 HFN Sequence.
 
 <!--more-->
 
