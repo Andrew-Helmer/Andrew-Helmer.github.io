@@ -59,7 +59,7 @@ Consider the first 16 points, which have the following stratifications:
 * Other 2D projections: $$[4 \times 1 \times 4 \times 1]$$, $$[4 \times 1 \times 1 \times 4]$$, $$[1 \times 4 \times 4 \times 1]$$, $$[1 \times 4 \times 1 \times 4]$$
 * High-dimensional: $$[2 \times 2 \times 2 \times 2]$$
 
-With higher point counts, the higher dimensional stratifications get filled out. For example at 64 points, all 3D 4x4x4 projections have exactly one point. This is a bit harder to visualize, but maybe this helps.
+With higher point counts, the higher dimensional stratifications get filled out. For example at 64 points, all 3D projections have exactly one point in the 4x4x4 stratification. This is a bit harder to visualize, but maybe this helps.
 
 <div id="sz-diagram-4d-projections" class="diagram diagram-wide"></div>
 
