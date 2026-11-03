@@ -95,7 +95,7 @@ Back when I was researching sampling in 2020 (prior to writing the Stochastic Ge
 
 To my delight, Ahmed et al. published the SZ Sequences paper in 2025 on arXiv and later in ACM TOG (for SIGGRAPH Asia). They connected these sequences to the prime-power $$(0,s)$$ Niederreiter constructions from ["Point Sets and Sequences with Small Discrepancy"](https://doi.org/10.1007/BF01294651) (1987). I learned so much from their paper, I had no idea that prime-power finite fields could be represented as matrices of the base prime. But when I read their paper and thought about it more, I had a feeling that the construction was a bit more complex than it needed to be. It still required some searching (for an $$\alpha$$ matrix), and also required sorting and rescrambling matrices. So I spent some time digging more, kind-of felt like there was a valid direction using polynomials and companion matrices to construct the alphabet, but I couldn't get it.
 
-Recently when Gemini 4 Argon came out, I thought I'd ask it to see if it could come up with a better construction. I told it the things I had already tried and the directions I was thinking... and it ran for about 10 minutes before it gave roughly the algorithm I'm describing in this article. It made some pretty amazing leaps and connected to some more obscure math theory (most of which I'm omitting here). After that I spent a lot of time understanding the exact algorithm, understanding the proof of why it works, and restructuring the algorithm to be easier to understand (and also slightly more efficient).
+Recently when Gemini 4 Argon came out, I thought I'd ask it to see if it could come up with a better construction. I told it the things I had already tried and the directions I was thinking... and it ran for about 10 minutes before it gave roughly the algorithm I'm describing in this article. It made a pretty amazing leap and connected it to some other theory that I'll mention near the end of the post. After that I spent a lot of time understanding the exact algorithm, understanding the proof of why it works, and restructuring the algorithm to be easier to understand (and also slightly more efficient).
 
 Like my other posts, the **writing** in this post is my own. I personally feel it's important for me to understand (or think I understand) anything I put out there, and writing it myself is a way to enforce that. But like my last post, the diagrams are AI generated (with specific instructions from me), the written code is mostly AI, and I had it help with formatting and notation details of the math.
 
@@ -379,9 +379,7 @@ And again, the block-Pascal matrix $$\mathcal{P}(X)$$ for prime base $$p$$ is de
 
 $$\mathcal{P}(X)_{i,j} = \binom{j}{i} X^{j-i} \pmod p$$
 
-In this generalized construction, you might notice that $$\alpha$$ is a [companion matrix](https://en.wikipedia.org/wiki/Companion_matrix) for a monic polynomial, specifically $$x^p - x - \beta = 0$$ over the previous (nested) field. I haven't gotten into it in this post, but that's the secret of how this construction was derived.
-
-Anyway here is the full Python code for HFN sequences, both for individual matrices of an arbitrary dimension, and for the first `num_dims` matrices.
+Andere is the full Python code for HFN sequences, both for individual matrices of an arbitrary dimension, and for the first `num_dims` matrices.
 
 {% highlight python linenos %}
 from math import comb
@@ -488,3 +486,5 @@ def generate_hfn_matrices(num_dims, p=2, N=32):
             ]
     return matrices
 {% endhighlight %}
+
+In this generalized construction, you might notice that $$\alpha$$ is a [companion matrix](https://en.wikipedia.org/wiki/Companion_matrix) for a monic polynomial, specifically $$x^p - x - \beta = 0$$ over the previous (nested) field. This construction comes pretty much directly from "[On arithmetical algorithms over finite fields](https://doi.org/10.1016/0097-3165(89)90020-4)" (Cantor 1989), who showed that it always generates a finite field of order $$p^{p^q}$$, which is what Gemini discovered and connected to SZ Sequences.
