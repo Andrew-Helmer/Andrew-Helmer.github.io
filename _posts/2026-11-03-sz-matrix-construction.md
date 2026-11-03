@@ -105,7 +105,7 @@ In any case, finding these sequences by brute-force was the easy part. I wouldn'
 
 My main point in this Backstory section is to give a little insight into how these things develop over longer periods of time. Ahmed et al. in their paper wrote about the same thing (Section 2.5):
 
-"We regard this as an excellent example of the community’s fast-paced learning cycles in analyzing and manipulating the inherently difficult-to-understand LD constructions. In this paper, we present an almost complete cycle from experimentationto the development of theoretical elements."
+"We regard this as an excellent example of the community’s fast-paced learning cycles in analyzing and manipulating the inherently difficult-to-understand LD constructions. In this paper, we present an almost complete cycle from experimentation to the development of theoretical elements."
 
 I believe that sharing not just the end result but the research process is valuable to future researchers.
 
