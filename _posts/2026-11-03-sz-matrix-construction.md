@@ -379,7 +379,7 @@ And again, the block-Pascal matrix $$\mathcal{P}(X)$$ for prime base $$p$$ is de
 
 $$\mathcal{P}(X)_{i,j} = \binom{j}{i} X^{j-i} \pmod p$$
 
-Andere is the full Python code for HFN sequences, both for individual matrices of an arbitrary dimension, and for the first `num_dims` matrices.
+And here is the full Python code for HFN sequences, both for individual matrices of an arbitrary dimension, and for the first `num_dims` matrices.
 
 {% highlight python linenos %}
 from math import comb
