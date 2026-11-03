@@ -40,7 +40,7 @@ This gives 4D or 5D sequences, and then sequences "juxtaposed" with shuffling. J
 
 ## The SZ Sequence
 
-SZ Sequences, defined in [SZ Sequences: Binary-Based (0, 2^q)-Sequences](https://dl.acm.org/doi/10.1145/3763272) by Ahmed et al., are the best possible way to do Method #2.
+SZ Sequences, defined in [SZ Sequences: Binary-Based $$(0, 2^q)$$-Sequences](https://dl.acm.org/doi/10.1145/3763272) by Ahmed et al., are the best possible way to do Method #2.
 
 Ahmed et al. talk about "SZ Sequences", but in this post, I'm going to talk about "The Canonical SZ Sequence" or just "The SZ Sequence", which I think is the simplest sequence to construct and the most obvious one to discover. And my belief is that all SZ Sequences can be obtained via Owen-shuffling and Owen-scrambling the canonical SZ Sequence.
 
