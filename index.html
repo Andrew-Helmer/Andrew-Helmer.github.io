@@ -18,10 +18,12 @@ katex: true
       </div>
       {%- endif -%}
       <div class="entry">
+        {% capture post_url %}{{ site.baseurl }}{{ post.url }}{% endcapture %}
+        {% capture new_href %}href="{{ post_url }}#{% endcapture %}
         {% if post.content contains "<!--more-->" %}
-          {{ post.content | split:"<!--more-->" | first }}
+          {{ post.content | split:"<!--more-->" | first | replace: 'href="#', new_href }}
         {% else %}
-          {{ post.excerpt }}
+          {{ post.excerpt | replace: 'href="#', new_href }}
         {% endif %}
       </div>
 
