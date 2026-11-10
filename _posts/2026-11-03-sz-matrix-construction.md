@@ -134,7 +134,7 @@ To generate the $$j + 1$$ basis block matrices $$E_0, E_1, \dots, E_j$$:
     1. For $$i = 0 \dots n - 1$$ (while $$n + i \le j$$):
         1. Let $$E'_i$$ be $$E_i$$ repeated along the main diagonal to size $$n \times n$$:
            $$E'_i = \begin{bmatrix} E_i & & 0 \\ & \ddots & \\ 0 & & E_i \end{bmatrix}_{n \times n}$$
-        1. Construct the $$2n \times 2n$$ basis matrix $$E_{n+i}$$ as a $$2 \times 2$$ block matrix with $$n \times $$ blocks:
+        1. Construct the $$2n \times 2n$$ basis matrix $$E_{n+i}$$ as a $$2 \times 2$$ block matrix with $$n \times n$$ blocks:
            $$E_{n+i} = \begin{bmatrix} 0_n & E'_i \\ \beta E'_i & E'_i \end{bmatrix}$$
     1. Set $$n \leftarrow 2n$$.
 
@@ -159,17 +159,17 @@ def repeat_diagonal(block, n):
 
 def block_pascal(block, N):
     m = len(block)
-    num_blocks = N // m
+    num_blocks = (N + m - 1) // m
     powers = [np.identity(m, dtype=int)]
     for _ in range(num_blocks - 1):
         powers.append(np.matmul(powers[-1], block) % 2)
 
-    P = np.zeros((N, N), dtype=int)
+    P = np.zeros((num_blocks * m, num_blocks * m), dtype=int)
     for i in range(num_blocks):
         for j in range(i, num_blocks):
             if comb(j, i) % 2 == 1:
                 P[i*m : (i+1)*m, j*m : (j+1)*m] = powers[j - i]
-    return P
+    return P[:N, :N]
 
 def generate_basis_matrices(num_matrices):
     basis_matrices = [np.array([[1]], dtype=int)]
@@ -402,18 +402,18 @@ def matrix_power_mod(matrix, exp, p):
 
 def block_pascal(block, N, p):
     m = len(block)
-    num_blocks = N // m
+    num_blocks = (N + m - 1) // m
     powers = [np.identity(m, dtype=int)]
     for _ in range(num_blocks - 1):
         powers.append(np.matmul(powers[-1], block) % p)
 
-    P = np.zeros((N, N), dtype=int)
+    P = np.zeros((num_blocks * m, num_blocks * m), dtype=int)
     for i in range(num_blocks):
         for j in range(i, num_blocks):
             coeff = comb(j, i) % p
             if coeff != 0:
                 P[i*m : (i+1)*m, j*m : (j+1)*m] = (coeff * powers[j - i]) % p
-    return P
+    return P[:N, :N]
 
 def make_alpha_matrix(beta, p):
     n = len(beta)
